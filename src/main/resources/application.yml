@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: iam-service2
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: secret
+#  sql:
+#    init:
+#      schema-locations: classpath:scheme.sql
+#      mode: always
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tducanh157@gmail.com
+    password: ospcxgltbkzykrgv
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.gmail.com
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: iam-service2-client
+            #client-secret: your-client-secret
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8082"
+            provider: keycloak
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8082/realms/iam-service2-realm
+
+application:
+  security:
+    jwt:
+      #privateKey
+      expiration: 86400000 # 1day
+      refresh-token:
+        expiration: 604800000 # 7days
+      enable: true
+    keycloak:
+      enabled: false
