@@ -1,5 +1,6 @@
 package com.da.iam.config;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +35,7 @@ public class ApplicationConfig {
         resolver.setCharacterEncoding("UTF-8");
         return resolver;
     }
+
     @Bean
     public SpringTemplateEngine templateEngine() {
         SpringTemplateEngine engine = new SpringTemplateEngine();
@@ -41,15 +43,16 @@ public class ApplicationConfig {
         return engine;
     }
 
-        @Bean
-        public Keycloak keycloak() {
-            return KeycloakBuilder.builder()
-                    .serverUrl("http://localhost:8082/")
-                    .realm("iam-service2-realm")
-                    .clientId("iam-service2-client")
-                    .username("admin")
-                    .password("admin")
-                    .build();
-        }
+    @Bean
+    public Keycloak keycloak() {
+        return KeycloakBuilder.builder()
+                .serverUrl("http://localhost:8082")
+                .realm("iam-service2-realm")
+                .clientId("iam-service2-client")
+                .grantType(OAuth2Constants.PASSWORD)
+                .username("admin")
+                .password("admin")
+                .build();
+    }
 
 }

@@ -54,4 +54,4 @@ application:
         expiration: 604800000 # 7days
       enable: true
     keycloak:
-      enabled: false
+      enabled: true

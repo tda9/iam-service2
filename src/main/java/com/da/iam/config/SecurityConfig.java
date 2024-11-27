@@ -40,7 +40,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                //.cors(Customizer.withDefaults())
+                .cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)//chu y cai nay, ko co se auto bi status 403
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(req -> req

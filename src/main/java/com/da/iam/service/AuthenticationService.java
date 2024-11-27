@@ -1,5 +1,6 @@
 package com.da.iam.service;
 
+import com.da.iam.dto.Credentials;
 import com.da.iam.dto.request.LoginRequest;
 import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
@@ -10,7 +11,16 @@ import com.da.iam.repo.*;
 
 
 import com.da.iam.utils.InputUtils;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 
@@ -20,10 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +48,13 @@ public class AuthenticationService {
     private final UserService userService;
     @Value("${application.security.jwt.enable}")
     private boolean iamJwtEnabled;
+
+    @Value("${application.security.keycloak.enabled}")
+    private boolean keycloakEnabled;
+    private final Keycloak keycloak;
+
     public BasedResponse<?> register(RegisterRequest request) {
+
         //check null request, null/empty email, password
         InputUtils.isValidRegisterRequest(request);
         String email = request.email();
@@ -53,8 +66,7 @@ public class AuthenticationService {
 
         User userEntity = User.builder().email(email).password(passwordEncoder.encode(password)).build();
 
-        //save user to user table
-        userService.saveUser(userEntity);
+
 //        for (Role r : roles) {
 //            //Role role = roleRepo.findRoleByName(r.getName());
 //            Role role = roleRepo.findRoleByName("USER");
@@ -63,6 +75,8 @@ public class AuthenticationService {
 //        }
 //        Set<Role> roles = getRoles(request.role());
         Role role = roleRepo.findRoleByName("USER");
+        //save user to user table
+        userService.saveUser(userEntity);
         UserRoles userRoles = new UserRoles(userEntity.getUserId(), role.getRoleId());
 
         //save all user's roles to db
@@ -73,49 +87,42 @@ public class AuthenticationService {
         //String token = passwordService.generateToken();
         //5 phut hieu luc, trong thoi gian do khong duoc gui them
         //sendConfirmation(request.email(), token, userEntity);
-        if(iamJwtEnabled) {
+        String jwtToken = null;
+        if (iamJwtEnabled) {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-            var jwtToken = jwtService.generateToken(userEntity.getEmail());
+             jwtToken = jwtService.generateToken(userEntity.getEmail());
             blackListTokenRepo.save(new BlackListToken(jwtToken, LocalDateTime.now().plusMinutes(10), userEntity.getUserId()));
-            return BasedResponse.builder()
-                    .httpStatusCode(200)
-                    .requestStatus(true)
-                    .data(jwtToken)
-                    .build();
+        }
+        if (keycloakEnabled) {
+            String accessToken = keycloak.tokenManager().getAccessTokenString();
+            Client client = ClientBuilder.newClient();
+            String  createUserUrl = "http://localhost:8082/admin/realms/iam-service2-realm/users";;
+            try{
+                UsersResource userResource = keycloak().realm("iam-service2-realm").users();
+                CredentialRepresentation credential = Credentials.createPasswordCredentials(request.password());
+                UserRepresentation user = new UserRepresentation();
+                user.setUsername(request.email());
+                user.setFirstName(null);
+                user.setLastName(null);
+                user.setEmail(request.email());
+                user.setCredentials(Collections.singletonList(credential));
+                user.setEnabled(true);
+                userResource.create(user);
+                Response response = client.target(createUserUrl)
+                        .request(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .post(Entity.entity(user, MediaType.APPLICATION_JSON));
+            }catch (Exception e){
+                System.out.println(e.getMessage());
+            }
         }
         return BasedResponse.builder()
                 .httpStatusCode(200)
                 .requestStatus(true)
-                .message("We send confirmation register to your email. It will expire in 5 minutes")
-                .data(userEntity)
+                .data(jwtToken)
                 .build();
     }
 
-    //    public void sendConfirmation(String to, String token, User userEntity) {
-//        if (userEntity == null) {
-//            throw new UserNotFoundException("User Entity null");
-//        }
-//        Optional<PasswordResetToken> lastToken = passwordResetTokenRepo.findTopByUserIdOrderByCreatedAtDesc(userEntity.getUserId());
-//        if (lastToken.isPresent() && lastToken.get().getExpirationDate().isBefore(LocalDateTime.now())) {
-//            throw new TooManyRequestsException("You can only request a password reset every 5 minutes.");
-//        } else if (lastToken.isPresent() && lastToken.get().getExpirationDate().isAfter(LocalDateTime.now())) {
-//            passwordResetTokenRepo.delete(lastToken.get());
-//        }
-//        emailService.sendConfirmationRegistrationEmail(to, token);
-//        passwordResetTokenRepo.save(new PasswordResetToken(token, LocalDateTime.now().plusMinutes(5), userEntity.getUserId()));
-//    }
-//
-//    public void confirmEmail(String email, String token) {
-//        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found"));
-//        PasswordResetToken requestToken = passwordResetTokenRepo.findPasswordResetTokenByToken(token);
-//        if (requestToken.getExpirationDate().isBefore(LocalDateTime.now()) || !Objects.equals(user.getUserId(), requestToken.getUserId())) {
-//            throw new IllegalArgumentException("Invalid or expired token");
-//        }
-//        user.setConfirm(true);
-//        userRepo.save(user);
-//        passwordResetTokenRepo.delete(requestToken);
-//    }
-//
     public BasedResponse<?> authenticate(LoginRequest request) {
         String email = request.email();
         String password = request.password();
@@ -133,28 +140,21 @@ public class AuthenticationService {
 //                    .build();
 //        }
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-        //var jwtToken = jwtService.generateToken(userEntity.getEmail());
-        //blackListTokenRepo.save(new BlackListToken(jwtToken, LocalDateTime.now().plusMinutes(10), LocalDateTime.now(), userEntity.getUserId()));
         return BasedResponse.builder()
                 .httpStatusCode(200)
                 .requestStatus(true)
                 //.data(jwtToken)
                 .build();
     }
-//
-//    private Set<Role> getRoles(Set<String> roles) {
-//        Set<Role> rolesSet = new HashSet<>();
-//        for (String role : roles) {
-//            Role tmpRole = new Role();
-//            tmpRole.setName(role);
-//            rolesSet.add(tmpRole);
-//        }
-//        return rolesSet;
-//    }
-//
-//    @Transactional//tim hieu tai sao o day can transactional
-//    public void logout(String email) {
-//        User u = userRepo.findByEmail(email).orElseThrow();
-//        blackListTokenRepo.deleteAllByUserId(u.getUserId());
-//    }
+
+    public Keycloak keycloak() {
+        return KeycloakBuilder.builder()
+                .serverUrl("http://localhost:8082")
+                .realm("iam-service2-realm")
+                .clientId("iam-service2-client")
+                .grantType("password")
+                .username("keycloak_admin")
+                .password("123")
+                .build();
+    }
 }
