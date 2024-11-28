@@ -2,10 +2,7 @@ package com.da.iam.entity;
 
 import com.da.iam.audit.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -15,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table(name = "role_permissions")
 @Entity
+@Builder
 public class RolePermissions extends BaseEntity {
     @Id
     @Column(name = "id")

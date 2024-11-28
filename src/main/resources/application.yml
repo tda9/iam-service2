@@ -32,18 +32,27 @@ spring:
             trust: smtp.gmail.com
   security:
     oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/realms/master
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+          jws-algorithms: RS256
+        opaquetoken:
+          client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
+          client-id: iam-service-client-master
+
       client:
         registration:
           keycloak:
-            client-id: iam-service2-client
-            #client-secret: your-client-secret
+            client-id: iam-service-client-master
+            client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
             scope: openid,profile,email
             authorization-grant-type: authorization_code
             redirect-uri: "http://localhost:8082"
             provider: keycloak
         provider:
           keycloak:
-            issuer-uri: http://localhost:8082/realms/iam-service2-realm
+            issuer-uri: http://localhost:8082/realms/master
 
 application:
   security:
@@ -55,3 +64,14 @@ application:
       enable: true
     keycloak:
       enabled: true
+jwt:
+  auth:
+    converter:
+      principal-attribute: principal_username
+      resource-id: iam-service-client-master
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

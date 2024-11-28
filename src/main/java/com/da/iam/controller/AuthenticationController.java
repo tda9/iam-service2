@@ -5,6 +5,7 @@ import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
 import com.da.iam.service.AuthenticationService;
+import com.da.iam.service.KeycloakService;
 import com.da.iam.service.PasswordService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import java.util.Map;
 public class AuthenticationController {
     private final PasswordService passwordService;
     private final AuthenticationService authenticationService;
-
+    private final KeycloakService keycloakService;
 //    @GetMapping("/confirmation-registration")
 //    public BasedResponse<?> confirmRegister(@RequestParam String email, @RequestParam String token){
 //        try {
@@ -105,6 +106,7 @@ public class AuthenticationController {
 //                .build();
 //    }
 
+    @PreAuthorize("hasAuthority('READ_USER') or hasRole('USER')")
     @GetMapping("/hello")
     //@PreAuthorize("hasAnyRole('USER','ADMIN')")
     public String test() {
@@ -115,5 +117,13 @@ public class AuthenticationController {
     //@PreAuthorize("hasAnyRole('ADMIN')")
     public String test1() {
         return "Hello World ADMIN";
+    }
+
+    @PostMapping("/api/logout")
+    public String logout(@RequestParam String clientId,
+                         @RequestParam String refreshToken,
+                         @RequestParam String redirectUri) {
+        keycloakService.logoutUser(clientId, refreshToken, redirectUri);
+        return "Logout request has been sent.";
     }
 }

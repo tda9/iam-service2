@@ -11,21 +11,10 @@ import java.util.List;
 @Service
 public class KeycloakService {
 
-        @Autowired
-        private Keycloak keycloak;
+    @Autowired
+    private KeycloakLogoutClient keycloakLogoutClient;
 
-        public void syncUsers() {
-            List<UserRepresentation> users = keycloak.realm("your-realm")
-                    .users()
-                    .list();
-
-            users.forEach(user -> {
-                String userId = user.getId();
-                String email = user.getEmail();
-
-                // Store or update user in your database
-                // Example: userService.saveUser(new User(userId, email));
-            });
-        }
-
+    public void logoutUser(String clientId, String refreshToken, String redirectUri) {
+        keycloakLogoutClient.logout(clientId, refreshToken, redirectUri);
+    }
 }

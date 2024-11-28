@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
-                                "/",
+                                "/","/iam/*",
                                 "/register", "/confirmation-registration",
                                 "/login",
                                 "/api/logout",
@@ -53,13 +53,15 @@ public class SecurityConfig {
                                 "/custom-login")//tra ve thong bao user login tren keycloak
                         .permitAll()
                         .anyRequest().authenticated()
+
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
 
                 //keycloak token filter here
-                //.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtConverter)))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtConverter)))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(keycloakTokenFilter, JWTFilter.class)
 
         ;

@@ -19,10 +19,11 @@ public class ApplicationConfig {
         return new JwtGrantedAuthoritiesConverter();
     }
 
+    //chu y cai nay, can co cai nay cho secureconfig, neu ko co se ko decode duoc jwt cua keyckoak
     @Bean
     public JwtDecoder jwtDecoder() {
         // Replace the URI with the issuer URI of your Keycloak or other OIDC provider
-        return JwtDecoders.fromIssuerLocation("http://localhost:8082/realms/iam-service2-realm");
+        return JwtDecoders.fromIssuerLocation("http://localhost:8082/realms/master");
     }
 
     @Bean
@@ -43,16 +44,16 @@ public class ApplicationConfig {
         return engine;
     }
 
-    @Bean
-    public Keycloak keycloak() {
-        return KeycloakBuilder.builder()
-                .serverUrl("http://localhost:8082")
-                .realm("iam-service2-realm")
-                .clientId("iam-service2-client")
-                .grantType(OAuth2Constants.PASSWORD)
-                .username("admin")
-                .password("admin")
-                .build();
-    }
+//    @Bean
+//    public Keycloak keycloak() {
+//        return KeycloakBuilder.builder()
+//                .serverUrl("http://localhost:8082")
+//                .realm("iam-service2-realm")
+//                .clientId("iam-service2-client")
+//                .grantType(OAuth2Constants.PASSWORD)
+//                .username("admin")
+//                .password("admin")
+//                .build();
+//    }
 
 }

@@ -14,6 +14,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "roles")
+@Builder
+@AllArgsConstructor
 public class Role extends BaseEntity {
 
     @Id
@@ -21,5 +23,5 @@ public class Role extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID roleId;
     private String name;
-
+private boolean deleted;
    }

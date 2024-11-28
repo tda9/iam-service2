@@ -11,6 +11,6 @@ import java.util.Set;
 
 
 @Builder
-public record RegisterRequest(String email, String password, LocalDate dob, String phone) {
-    //,Set<String> role
+public record RegisterRequest(String email, String password, LocalDate dob, String phone,Set<String> role) {
+
 }

@@ -1,6 +1,9 @@
 package com.da.iam.utils;
 
+import com.da.iam.dto.request.BasedRequest;
+import com.da.iam.dto.request.PermissionDTO;
 import com.da.iam.dto.request.RegisterRequest;
+import com.da.iam.dto.request.RoleDTO;
 import com.da.iam.service.PasswordService;
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +39,25 @@ private static PasswordService passwordService;
         InputUtils.isValidEmail(email);
         if (password == null || password.isEmpty()) {
             throw new IllegalArgumentException("Missing request password");
+        }
+    }
+
+    public static void isValidPermissionDTO(PermissionDTO request) {
+        isValidRequest(request);
+        if (request.getName() == null || request.getName().isEmpty()) {
+            throw new IllegalArgumentException("Missing permission name");
+        }
+    }
+
+    private static void isValidRequest(BasedRequest basedRequest){
+        if(basedRequest==null){
+            throw new IllegalArgumentException("Missing request body");
+        }
+    }
+    public static void isValidRoleDTO(RoleDTO request) {
+        isValidRequest(request);
+        if (request.getName() == null || request.getName().isEmpty()) {
+            throw new IllegalArgumentException("Missing role name");
         }
     }
 

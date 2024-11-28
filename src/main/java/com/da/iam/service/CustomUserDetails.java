@@ -15,7 +15,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomUserDetails implements UserDetails {
-
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
