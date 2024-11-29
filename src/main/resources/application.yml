@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: iam-service2
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: secret
+#  sql:
+#    init:
+#      schema-locations: classpath:scheme.sql
+#      mode: always
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tducanh157@gmail.com
+    password: ospcxgltbkzykrgv
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.gmail.com
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/realms/master
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+          jws-algorithms: RS256
+        opaquetoken:
+          client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
+          client-id: iam-service-client-master
+
+      client:
+        registration:
+          keycloak:
+            client-id: iam-service-client-master
+            client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8082"
+            provider: keycloak
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8082/realms/master
+
+application:
+  security:
+    jwt:
+      #privateKey
+      expiration: 86400000 # 1day
+      refresh-token:
+        expiration: 604800000 # 7days
+      enable: false
+    keycloak:
+      enabled: true
+      serverUrl: http://localhost:8082
+      realm: master
+      clientId: iam-service-client-master
+      clientSecret: turn-off-client-authentication
+      grantType: password
+      username: admin
+      password: admin
+      logoutUrl: ${application.security.keycloak.serverUrl}/realms/master/protocol/openid-connect/logout
+
+
+
+jwt:
+  auth:
+    converter:
+      principal-attribute: principal_username
+      resource-id: iam-service-client-master
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
