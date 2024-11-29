@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PermissionManagementController {
     private final PermissionService permissionService;
-//    @GetMapping("/permissions")
-//    public BasedResponse<?> searchByName(@RequestParam @Valid String name, Pageable pageable) {
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .data(permissionService.(name, pageable))
-//                .build();
-//    }
+    @GetMapping("/permissions")
+    public BasedResponse<?> searchByResourceName(@RequestParam @Valid String name) {
+        return BasedResponse.builder()
+                .httpStatusCode(200)
+                .requestStatus(true)
+                .data(permissionService.searchByResourceName(name))
+                .build();
+    }
 //    @PostMapping("/permissions")
 //    public BasedResponse<Object> getAll(Pageable pageable) {
 //        return BasedResponse.builder()
@@ -39,7 +39,7 @@ public class PermissionManagementController {
     }
 
     @PutMapping("/permissions")
-    public BasedResponse<?> updateByResourceCode(@RequestBody @Valid PermissionDTO permissionDTO){
+    public BasedResponse<?> updateByPermissionId(@RequestBody @Valid PermissionDTO permissionDTO){
         return permissionService.updateById(permissionDTO);
     }
 

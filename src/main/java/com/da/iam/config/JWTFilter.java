@@ -22,11 +22,11 @@ import java.io.IOException;
 public class JWTFilter extends OncePerRequestFilter {
     private final UserDetailsService customUserDetailsService;
     private final JWTService jwtService;
-    @Value("${application.security.jwt.enable}")
-    private boolean iamJwtEnabled;
+    @Value("${application.authProvider}")
+    private String authProvider;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if(iamJwtEnabled){
+        if(authProvider.equals("DEFAULT")){
             final String header = request.getHeader("Authorization");
             final String jwt;
             final String email;

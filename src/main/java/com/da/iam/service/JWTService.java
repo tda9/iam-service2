@@ -13,6 +13,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +27,22 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 
 public class JWTService {
-    private static final String SECRET = "e38d1dc06f02bc2435485df871653622678e9e1cdf74105119c9d376abdffd6c";
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
+    @Value("${application.security.jwt.refresh-token.expiration}")
+    private long refreshExpiration;
     @Autowired
     BlackListTokenRepo blackListTokenRepo;
     @Autowired
     UserRepo userRepo;
-
+    public String generateRefreshToken(String username) {
+        PrivateKey privateKey = rsaKeyUtil.getPrivateKey();
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .signWith(privateKey, SignatureAlgorithm.RS256)
+                .compact();
+    }
     public String generateToken(String username) {
         PrivateKey privateKey = rsaKeyUtil.getPrivateKey();
         return Jwts.builder().setSubject(username).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 1000*60*10))//10 phut

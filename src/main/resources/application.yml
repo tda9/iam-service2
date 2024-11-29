@@ -55,13 +55,13 @@ spring:
             issuer-uri: http://localhost:8082/realms/master
 
 application:
+  authProvider: KEYCLOAK
   security:
     jwt:
       #privateKey
       expiration: 86400000 # 1day
       refresh-token:
         expiration: 604800000 # 7days
-      enable: false
     keycloak:
       enabled: true
       serverUrl: http://localhost:8082
@@ -72,7 +72,7 @@ application:
       username: admin
       password: admin
       logoutUrl: ${application.security.keycloak.serverUrl}/realms/master/protocol/openid-connect/logout
-
+      newAccessTokenUrl: ${application.security.keycloak.serverUrl}/realms/master/protocol/openid-connect/token
 
 
 jwt:

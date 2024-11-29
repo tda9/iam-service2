@@ -2,6 +2,7 @@ package com.da.iam.repo;
 
 import com.da.iam.entity.Permission;
 import com.da.iam.entity.Role;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,7 +31,8 @@ public interface RoleRepo extends JpaRepository<Role, UUID> {
 
     @Query("SELECT r FROM Role r WHERE r.name = :name AND r.roleId != :id")
     List<Role> findRoleByNameExceptId(@Param("name") String name,
-                                                   @Param("id") UUID id);
+               @Param("id") UUID id);
+    @Transactional
     @Modifying
     @Query("UPDATE Role p SET p.name = :name WHERE p.roleId = :roleId")
     void updateRoleById(@Param("roleId") UUID roleId, @Param("name") String name);
@@ -38,8 +40,9 @@ public interface RoleRepo extends JpaRepository<Role, UUID> {
     @Query("SELECT p FROM Permission p RIGHT JOIN RolePermissions rp ON rp.permissionId = p.permissionId WHERE rp.roleId = :roleId")
     Set<Permission> findRolePermission(@Param("roleId") UUID roleId);
 
+    @Transactional
     @Modifying
     @Query("UPDATE Role p SET p.deleted = true WHERE p.roleId = :roleId")
-    void softDeleteRoleById(@Param("roleId") UUID roleId);
+    int softDeleteRoleById(@Param("roleId") UUID roleId);
 
 }

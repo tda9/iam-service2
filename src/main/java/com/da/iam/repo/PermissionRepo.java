@@ -1,15 +1,13 @@
 package com.da.iam.repo;
 
 import com.da.iam.entity.Permission;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,14 +16,16 @@ public interface PermissionRepo extends JpaRepository<Permission, UUID> {
     Optional<Permission> findByResourceCodeIgnoreCase(String resourceCode);
     Optional<Permission> findByResourceNameIgnoreCase(String resourceName);
 
-    @Modifying
+
     @Query("SELECT p FROM Permission p WHERE p.resourceCode = :resourceCode AND p.permissionId != :permissionId")
     Optional<Permission> checkExistedPermission(String resourceCode,UUID permissionId);
-
+    @Transactional
     @Modifying
-    @Query("UPDATE Permission p SET p.resourceCode = :resourceCode, p.scope = :scope WHERE p.permissionId = :permissionId")
-    void updatePermissionById(@Param("permissionId") UUID permissionId, @Param("resourceCode") String resourceCode,@Param("scope") String scope);
-
+    @Query("UPDATE Permission p SET p.resourceCode = :resourceCode, p.scope = :scope, p.resourceName = :resourceName WHERE p.permissionId = :permissionId")
+    void updatePermissionById(@Param("permissionId") UUID permissionId,
+                              @Param("resourceCode") String resourceCode,
+                              @Param("scope") String scope);
+    @Transactional
     @Modifying
     @Query("UPDATE Permission p SET p.deleted = true WHERE p.resourceCode = :resourceCode")
     void deletePermissionByResourceCode(@Param("resourceCode") String resourceCode);

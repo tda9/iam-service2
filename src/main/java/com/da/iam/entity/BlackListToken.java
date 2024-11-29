@@ -2,10 +2,7 @@ package com.da.iam.entity;
 
 import com.da.iam.audit.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -15,6 +12,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "blacklist_token")
 @AllArgsConstructor
+@Builder
 public class BlackListToken extends BaseEntity {
 
     @Id

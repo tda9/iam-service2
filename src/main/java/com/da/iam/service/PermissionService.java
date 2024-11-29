@@ -20,9 +20,9 @@ import java.util.UUID;
 public class PermissionService {
     private final PermissionRepo permissionRepo;
 
-    //    public Page<Permission> searchAllByName(String name, Pageable pageable){
-//        return permissionRepo.findAllByNameContainsIgnoreCase(name, pageable);
-//    }
+    public Permission searchByResourceName(String name) {
+        return permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow();
+    }
 //    public Page<Permission> getAll(Pageable pageable){
 //        return permissionRepo.findAll(pageable);
 //    }
@@ -129,7 +129,6 @@ public class PermissionService {
         } catch (Exception ex) {
             throw new IllegalArgumentException("Update permission failed");
         }
-
         return BasedResponse.builder()
                 .httpStatusCode(200)
                 .requestStatus(true)

@@ -33,13 +33,13 @@ public class KeycloakTokenFilter extends OncePerRequestFilter {
 
     private final JwtDecoder jwtDecoder;
     private  final UserService userService;
-    @Value("${application.security.keycloak.enabled}")
-    private boolean keycloakEnabled;
+    @Value("${application.authProvider}")
+    private String authProvider;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
 
-        if(keycloakEnabled){
+        if(authProvider.equals("KEYCLOAK")){
             String token = extractToken(request);
             if (token != null && !token.isEmpty()) {
                 try {

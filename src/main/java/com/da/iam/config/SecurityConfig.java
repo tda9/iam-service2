@@ -5,6 +5,7 @@ import com.da.iam.repo.UserRepo;
 import com.da.iam.service.CustomUserDetailsService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +37,8 @@ public class SecurityConfig {
     private final JWTFilter jwtFilter;
     private final JwtConverter jwtConverter;
     private final KeycloakTokenFilter keycloakTokenFilter;
+    @Value("${application.authProvider}")
+    String authProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,9 +48,9 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
-                                "/","/iam/*",
+                                "/", "/iam/*",
                                 "/register", "/confirmation-registration",
-                                "/login",
+                                "/login", "/get-new-access-token",
                                 "/api/logout",
                                 "/forgot-password", "/reset-password",
                                 "/custom-login")//tra ve thong bao user login tren keycloak
@@ -57,12 +60,12 @@ public class SecurityConfig {
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-
-
-                //keycloak token filter here
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtConverter)))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(keycloakTokenFilter, JWTFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        if (authProvider.equals("KEYCLOAK")) {//keycloak token filter here
+            http
+                    .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtConverter)))
+                    .addFilterBefore(keycloakTokenFilter, JWTFilter.class);
+        }
 
         ;
         return http.build();

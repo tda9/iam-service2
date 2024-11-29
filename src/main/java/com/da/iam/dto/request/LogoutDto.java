@@ -4,5 +4,5 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 
-public record LogoutDto(String refreshToken) {
+public record LogoutDto(String refreshToken, String email) {
 }

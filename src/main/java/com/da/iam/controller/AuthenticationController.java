@@ -6,9 +6,14 @@ import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
 import com.da.iam.service.AuthenticationService;
+import com.da.iam.service.BaseService;
 import com.da.iam.service.KeycloakService;
 import com.da.iam.service.PasswordService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,12 +21,12 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.Map;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @RestController
 public class AuthenticationController {
     private final PasswordService passwordService;
-    private final AuthenticationService authenticationService;
-    private final KeycloakService keycloakService;
+    private final ServiceFactory serviceFactory;
+
 //    @GetMapping("/confirmation-registration")
 //    public BasedResponse<?> confirmRegister(@RequestParam String email, @RequestParam String token){
 //        try {
@@ -39,12 +44,12 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public BasedResponse<?> register(@RequestBody RegisterRequest request) {
-        return authenticationService.register(request);
+        return serviceFactory.getService().register(request);
     }
 
     @PostMapping("/login")
     public BasedResponse<?> login(@RequestBody LoginRequest request) {
-            return authenticationService.authenticate(request);
+            return serviceFactory.getService().login(request);
     }
     @GetMapping("/custom-login")
     public BasedResponse<?> redirectToKeycloakLogin() {
@@ -123,7 +128,17 @@ public class AuthenticationController {
 
     @PostMapping("/api/logout")
     public String logout(@RequestBody LogoutDto logoutDto) {
-        keycloakService.logoutUser(logoutDto);
+        serviceFactory.getService().logout(logoutDto);
         return "Logout request has been sent.";
+    }
+
+    @PostMapping("/get-new-access-token")
+    public BasedResponse<?> getNewAccessToken(@RequestBody LogoutDto logoutDto) {
+        return serviceFactory.getService().getNewAccessTokenKeycloak(logoutDto);
+    }
+
+    @PostMapping("/refresh-token")
+    public BasedResponse<?> refreshToken(HttpServletRequest request) {
+        return serviceFactory.getService().getNewAccessToken(request);
     }
 }
