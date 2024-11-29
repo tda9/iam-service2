@@ -12,5 +12,5 @@ public class RoleDTO implements BasedRequest{
     private UUID roleId;
     private String name;
     private boolean deleted;
-    private Set<String> permissions;
+    private Set<String> permissionsResourceName;
 }

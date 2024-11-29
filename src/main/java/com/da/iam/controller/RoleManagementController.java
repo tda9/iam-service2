@@ -16,15 +16,20 @@ public class RoleManagementController {
 
     private final RoleService roleService;
 
-    //@PreAuthorize("hasRole('SYSTEM_MANAGER')")
+    //@PreAuthorize("hasAuthority('SYSTEM_MANAGER.CREATE')")
     @PostMapping("/roles")
     public BasedResponse<?> create(@RequestBody @Valid RoleDTO roleDTO) {
         return roleService.create(roleDTO);
     }
 
-    //@PreAuthorize("hasRole('SYSTEM_MANAGER')")
+    @PreAuthorize("hasAuthority('ROLE.UPDATE')")
     @PutMapping("/roles")
     public BasedResponse<?> updateByName(@RequestBody @Valid RoleDTO roleDTO){
         return roleService.updateById(roleDTO);
+    }
+    @PreAuthorize("hasAuthority('ROLE.DELETE')")
+    @DeleteMapping("/roles")
+    public BasedResponse<?> deleteByName(@RequestParam @Valid String name){
+        return roleService.deleteRoleById(name);
     }
 }

@@ -23,5 +23,5 @@ public class Role extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID roleId;
     private String name;
-private boolean deleted;
-   }
+    private boolean deleted;
+}

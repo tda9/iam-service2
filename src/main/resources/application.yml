@@ -61,9 +61,20 @@ application:
       expiration: 86400000 # 1day
       refresh-token:
         expiration: 604800000 # 7days
-      enable: true
+      enable: false
     keycloak:
       enabled: true
+      serverUrl: http://localhost:8082
+      realm: master
+      clientId: iam-service-client-master
+      clientSecret: turn-off-client-authentication
+      grantType: password
+      username: admin
+      password: admin
+      logoutUrl: ${application.security.keycloak.serverUrl}/realms/master/protocol/openid-connect/logout
+
+
+
 jwt:
   auth:
     converter:

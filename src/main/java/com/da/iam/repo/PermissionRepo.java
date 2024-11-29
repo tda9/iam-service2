@@ -15,24 +15,38 @@ import java.util.UUID;
 
 @Repository
 public interface PermissionRepo extends JpaRepository<Permission, UUID> {
-
-    Page<Permission> findAllByNameContainsIgnoreCase(String name, Pageable pageable);
-
-
-    @Modifying
-    @Query("UPDATE Permission p SET p.name = :name WHERE p.permissionId = :permissionId")
-    void updatePermissionById(@Param("permissionId") UUID permissionId, @Param("name") String name);
-
-    Optional<Permission> findByNameIgnoreCase(String name);
+    Optional<Permission> findByResourceCodeIgnoreCase(String resourceCode);
+    Optional<Permission> findByResourceNameIgnoreCase(String resourceName);
 
     @Modifying
-    @Query("UPDATE Permission p SET p.deleted = :deleted WHERE p.name = :name")
-    void deletePermissionByName(@Param("name") String name,
-                                @Param("deleted") boolean deleted);
+    @Query("SELECT p FROM Permission p WHERE p.resourceCode = :resourceCode AND p.permissionId != :permissionId")
+    Optional<Permission> checkExistedPermission(String resourceCode,UUID permissionId);
 
-    @Query("SELECT p FROM Permission p WHERE p.name = :name AND p.permissionId != :id")
-    List<Permission> findPermissionsByNameExceptId(@Param("name") String name,
-                                                   @Param("id") UUID id);
+    @Modifying
+    @Query("UPDATE Permission p SET p.resourceCode = :resourceCode, p.scope = :scope WHERE p.permissionId = :permissionId")
+    void updatePermissionById(@Param("permissionId") UUID permissionId, @Param("resourceCode") String resourceCode,@Param("scope") String scope);
 
+    @Modifying
+    @Query("UPDATE Permission p SET p.deleted = true WHERE p.resourceCode = :resourceCode")
+    void deletePermissionByResourceCode(@Param("resourceCode") String resourceCode);
+
+//    Page<Permission> findAllByNameContainsIgnoreCase(String name, Pageable pageable);
+//
+//
+//    @Modifying
+//    @Query("UPDATE Permission p SET p.name = :name WHERE p.permissionId = :permissionId")
+//    void updatePermissionById(@Param("permissionId") UUID permissionId, @Param("name") String name);
+//
+//    Optional<Permission> findByNameIgnoreCase(String name);
+//
+//    @Modifying
+//    @Query("UPDATE Permission p SET p.deleted = :deleted WHERE p.name = :name")
+//    void deletePermissionByName(@Param("name") String name,
+//                                @Param("deleted") boolean deleted);
+//
+//    @Query("SELECT p FROM Permission p WHERE p.name = :name AND p.permissionId != :id")
+//    List<Permission> findPermissionsByNameExceptId(@Param("name") String name,
+//                                                   @Param("id") UUID id);
+//
 
 }

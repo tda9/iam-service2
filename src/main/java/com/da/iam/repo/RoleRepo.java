@@ -35,8 +35,11 @@ public interface RoleRepo extends JpaRepository<Role, UUID> {
     @Query("UPDATE Role p SET p.name = :name WHERE p.roleId = :roleId")
     void updateRoleById(@Param("roleId") UUID roleId, @Param("name") String name);
 
-
     @Query("SELECT p FROM Permission p RIGHT JOIN RolePermissions rp ON rp.permissionId = p.permissionId WHERE rp.roleId = :roleId")
-    List<Permission> findRolePermission(@Param("roleId") UUID roleId);
+    Set<Permission> findRolePermission(@Param("roleId") UUID roleId);
+
+    @Modifying
+    @Query("UPDATE Role p SET p.deleted = true WHERE p.roleId = :roleId")
+    void softDeleteRoleById(@Param("roleId") UUID roleId);
 
 }

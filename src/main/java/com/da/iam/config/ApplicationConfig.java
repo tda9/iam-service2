@@ -3,6 +3,7 @@ package com.da.iam.config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -44,16 +45,32 @@ public class ApplicationConfig {
         return engine;
     }
 
-//    @Bean
-//    public Keycloak keycloak() {
-//        return KeycloakBuilder.builder()
-//                .serverUrl("http://localhost:8082")
-//                .realm("iam-service2-realm")
-//                .clientId("iam-service2-client")
-//                .grantType(OAuth2Constants.PASSWORD)
-//                .username("admin")
-//                .password("admin")
-//                .build();
-//    }
+    @Value("${application.security.keycloak.serverUrl}")
+    private String serverUrl;
+    @Value("${application.security.keycloak.realm}")
+    private String realm;
+    @Value("${application.security.keycloak.clientId}")
+    private String clientId;
+    @Value("${application.security.keycloak.clientSecret}")
+    private String clientSecret;
+    @Value("${application.security.keycloak.grantType}")
+    private String grantType;
+    @Value("${application.security.keycloak.username}")
+    private String username;
+    @Value("${application.security.keycloak.password}")
+    private String password;
+
+    @Bean
+    public Keycloak keycloak() {
+        return KeycloakBuilder.builder()
+                .serverUrl(serverUrl)
+                .realm(realm)
+                .clientId(clientId)
+                .grantType(grantType)
+                .username(username)
+                .clientSecret(clientSecret)
+                .password(password)
+                .build();
+    }
 
 }

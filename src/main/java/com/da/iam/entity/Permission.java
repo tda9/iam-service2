@@ -19,7 +19,12 @@ public class Permission extends BaseEntity {
     @Column(name = "permission_id")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID permissionId;
-
-    private String name;
+    @Column(name = "resource_name")
+    private String resourceName;
+    @Column(name = "scope")
+    private String scope;
+    @Column(name = "resource_code")
+    private String resourceCode;
     private boolean deleted;
+    //resource code(USER), scope(VIEW), resource name(QUAN LY NGUOI DUNG)
 }

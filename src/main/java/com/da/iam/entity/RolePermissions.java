@@ -22,4 +22,9 @@ public class RolePermissions extends BaseEntity {
     private UUID roleId;
     @Column(name = "permission_id")
     private UUID permissionId;
+    //resource code, scope\
+    @Column(name = "resource_code")
+    private String resourceCode;
+    @Column(name = "scope")
+    private String scope;
 }

@@ -1,16 +1,16 @@
-package com.da.iam.dto.request;
+package com.da.iam.dto.response;
 
+import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 
 import java.util.UUID;
-
-@Data
 @Builder
-public class PermissionDTO implements BasedRequest {
+@Data
+public class RolePermissionDtoResponse {
+    private UUID roleId;
     private UUID permissionId;
     private String resourceCode;
     private String resourceName;
-    private boolean deleted;
     private String scope;
 }

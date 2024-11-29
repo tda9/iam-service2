@@ -44,8 +44,10 @@ private static PasswordService passwordService;
 
     public static void isValidPermissionDTO(PermissionDTO request) {
         isValidRequest(request);
-        if (request.getName() == null || request.getName().isEmpty()) {
-            throw new IllegalArgumentException("Missing permission name");
+        if (request.getResourceCode() == null || request.getResourceCode().isEmpty()) {
+            throw new IllegalArgumentException("Missing permission resource code");
+        }else if (request.getResourceName() == null || request.getResourceName().isEmpty()) {
+            throw new IllegalArgumentException("Missing permission resource name");
         }
     }
 

@@ -1,6 +1,7 @@
 package com.da.iam.controller;
 
 import com.da.iam.dto.request.LoginRequest;
+import com.da.iam.dto.request.LogoutDto;
 import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
@@ -106,24 +107,23 @@ public class AuthenticationController {
 //                .build();
 //    }
 
-    @PreAuthorize("hasAuthority('READ_USER') or hasRole('USER')")
+    @PreAuthorize("hasAuthority('USER.VIEW')")
     @GetMapping("/hello")
     //@PreAuthorize("hasAnyRole('USER','ADMIN')")
     public String test() {
         return "Hello World";
     }
 
+    @PreAuthorize("hasAuthority('USER_MANAGER.VIEW')")
     @GetMapping("/admin")
     //@PreAuthorize("hasAnyRole('ADMIN')")
     public String test1() {
-        return "Hello World ADMIN";
+        return "Hello World USER_MANAGER";
     }
 
     @PostMapping("/api/logout")
-    public String logout(@RequestParam String clientId,
-                         @RequestParam String refreshToken,
-                         @RequestParam String redirectUri) {
-        keycloakService.logoutUser(clientId, refreshToken, redirectUri);
+    public String logout(@RequestBody LogoutDto logoutDto) {
+        keycloakService.logoutUser(logoutDto);
         return "Logout request has been sent.";
     }
 }
