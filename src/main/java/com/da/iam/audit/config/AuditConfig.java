@@ -1,5 +1,7 @@
 package com.da.iam.audit.config;
 
+import com.da.iam.service.CustomUserDetailsService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -8,16 +10,16 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-
+@RequiredArgsConstructor
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorProvider",
         dateTimeProviderRef = "dateTimeProvider")
 public class AuditConfig {
-
+private final CustomUserDetailsService customUserDetailsService;
     @Bean
-    AuditorAware<String> auditorProvider() {
+    public AuditorAware<String> auditorProvider() {
         // Implement logic to provide current auditor (user)
-        return new AuditorAwareImpl();
+        return new AuditorAwareImpl(customUserDetailsService);
     }
 
     @Bean

@@ -1,32 +1,23 @@
 package com.da.iam.controller;
 
 import com.da.iam.dto.request.LoginRequest;
-import com.da.iam.dto.request.LogoutDto;
+import com.da.iam.dto.request.LogoutRequest;
 import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
-import com.da.iam.service.AuthenticationService;
-import com.da.iam.service.BaseService;
-import com.da.iam.service.KeycloakService;
+import com.da.iam.service.KeycloakAuthenticationService;
 import com.da.iam.service.PasswordService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
-
-import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
 public class AuthenticationController {
     private final PasswordService passwordService;
-    private final ServiceFactory serviceFactory;
-
+    private final AuthenticationServiceFactory authenticationServiceFactory;
+    private final KeycloakAuthenticationService keycloakAuthenticationService;
 //    @GetMapping("/confirmation-registration")
 //    public BasedResponse<?> confirmRegister(@RequestParam String email, @RequestParam String token){
 //        try {
@@ -44,12 +35,12 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public BasedResponse<?> register(@RequestBody RegisterRequest request) {
-        return serviceFactory.getService().register(request);
+        return authenticationServiceFactory.getService().register(request);
     }
 
     @PostMapping("/login")
     public BasedResponse<?> login(@RequestBody LoginRequest request) {
-            return serviceFactory.getService().login(request);
+            return authenticationServiceFactory.getService().login(request);
     }
     @GetMapping("/custom-login")
     public BasedResponse<?> redirectToKeycloakLogin() {
@@ -60,66 +51,56 @@ public class AuthenticationController {
                 .httpStatusCode(301)
                 .build();
     }
-//
-//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-//    @PostMapping("/change-password")
-//    public BasedResponse<?> changePassword(
-//            @RequestParam String currentPassword, @RequestParam String newPassword,
-//            @RequestParam String confirmPassword, @RequestParam String email) {
-//        passwordService.changePassword(currentPassword, newPassword, confirmPassword, email);
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .message("Change password successful")
-//                .data(email)
-//                .build();
-//    }
-//
-//    @PostMapping("/forgot-password")
-//    public BasedResponse<?> forgotPassword(@RequestParam String email) {
-//        try {
-//            passwordService.forgotPassword(email);
-//            return BasedResponse.builder()
-//                    .data(email)
-//                    .httpStatusCode(200)
-//                    .requestStatus(true)
-//                    .message("Sending Mail Reset Password Successful")
-//                    .build();
-//        } catch (Exception e) {
-//            throw new ErrorResponseException("Error forgot password");
-//        }
-//    }
-//
-//    @GetMapping("/reset-password")
-//    public BasedResponse<?> resetPassword(@RequestParam String email, @RequestParam String newPassword, @RequestParam String token) {
-//        passwordService.resetPassword(email, newPassword, token);
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .data(email)
-//                .message("Reset password successful")
-//                .build();
-//    }
-//
-//    @PostMapping("/api/logout")//de /logout khong se trung default url, va khong chay dc
-//    public BasedResponse<?> logout(@RequestParam String email) {
-//        authenticationService.logout(email);
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .message("Logged out")
-//                .data(email)
-//                .build();
-//    }
 
-    @PreAuthorize("hasAuthority('USER.VIEW')")
+//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PostMapping("/change-password")
+    public BasedResponse<?> changePassword(
+            @RequestParam String currentPassword, @RequestParam String newPassword,
+            @RequestParam String confirmPassword, @RequestParam String email) {
+        keycloakAuthenticationService.changePassword(currentPassword, newPassword, confirmPassword, email);
+        return BasedResponse.builder()
+                .httpStatusCode(200)
+                .requestStatus(true)
+                .message("Change password successful")
+                .data(email)
+                .build();
+    }
+
+    @PostMapping("/forgot-password")
+    public BasedResponse<?> forgotPassword(@RequestParam String email) {
+        try {
+            keycloakAuthenticationService.forgotPassword(email);
+            return BasedResponse.builder()
+                    .data(email)
+                    .httpStatusCode(200)
+                    .requestStatus(true)
+                    .message("Sending Mail Reset Password Successful")
+                    .build();
+        } catch (Exception e) {
+            throw new ErrorResponseException("Error forgot password");
+        }
+    }
+
+    @GetMapping("/reset-password")
+    public BasedResponse<?> resetPassword(@RequestParam String email, @RequestParam String newPassword, @RequestParam String token) {
+        keycloakAuthenticationService.resetPassword(email, newPassword, token);
+        return BasedResponse.builder()
+                .httpStatusCode(200)
+                .requestStatus(true)
+                .data(email)
+                .message("Reset password successful")
+                .build();
+    }
+
+
+    @PreAuthorize("hasPermission(null,'USER.VIEW')")
     @GetMapping("/hello")
     //@PreAuthorize("hasAnyRole('USER','ADMIN')")
     public String test() {
         return "Hello World";
     }
 
-    @PreAuthorize("hasAuthority('USER_MANAGER.VIEW')")
+    @PreAuthorize("hasPermission(null,'USER.READ')")
     @GetMapping("/admin")
     //@PreAuthorize("hasAnyRole('ADMIN')")
     public String test1() {
@@ -127,18 +108,18 @@ public class AuthenticationController {
     }
 
     @PostMapping("/api/logout")
-    public String logout(@RequestBody LogoutDto logoutDto) {
-        serviceFactory.getService().logout(logoutDto);
+    public String logout(@RequestBody LogoutRequest request) {
+        authenticationServiceFactory.getService().logout(request);
         return "Logout request has been sent.";
     }
 
     @PostMapping("/get-new-access-token")
-    public BasedResponse<?> getNewAccessToken(@RequestBody LogoutDto logoutDto) {
-        return serviceFactory.getService().getNewAccessTokenKeycloak(logoutDto);
+    public BasedResponse<?> getNewAccessToken(@RequestBody LogoutRequest request) {
+        return authenticationServiceFactory.getService().getNewAccessTokenKeycloak(request);
     }
 
     @PostMapping("/refresh-token")
-    public BasedResponse<?> refreshToken(HttpServletRequest request) {
-        return serviceFactory.getService().getNewAccessToken(request);
+    public BasedResponse<?> refreshToken(@RequestParam String refreshToken) {
+        return authenticationServiceFactory.getService().getNewAccessToken(refreshToken);
     }
 }

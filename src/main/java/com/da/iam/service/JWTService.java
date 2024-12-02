@@ -45,7 +45,7 @@ public class JWTService {
     }
     public String generateToken(String username) {
         PrivateKey privateKey = rsaKeyUtil.getPrivateKey();
-        return Jwts.builder().setSubject(username).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 1000*60*10))//10 phut
+        return Jwts.builder().setSubject(username).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 1000*60*1))//10 phut
                 .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
     }
@@ -84,6 +84,11 @@ public class JWTService {
         }
         final String email = extractEmail(token);
         return (email.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+    public boolean isRefreshTokenValid(String token) throws Exception {
+        final String email = extractEmail(token);
+        userRepo.findByEmail(email).orElseThrow(()->new UserNotFoundException("User not found"));
+        return !isTokenExpired(token);
     }
 
 }

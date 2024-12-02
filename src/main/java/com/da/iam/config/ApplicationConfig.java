@@ -6,6 +6,9 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.PermissionEvaluator;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -15,6 +18,22 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 @Configuration
 public class ApplicationConfig {
+
+    @Value("${application.security.keycloak.serverUrl}")
+    private String serverUrl;
+    @Value("${application.security.keycloak.realm}")
+    private String realm;
+    @Value("${application.security.keycloak.clientId}")
+    private String clientId;
+    @Value("${application.security.keycloak.clientSecret}")
+    private String clientSecret;
+    @Value("${application.security.keycloak.grantType}")
+    private String grantType;
+    @Value("${application.security.keycloak.username}")
+    private String username;
+    @Value("${application.security.keycloak.password}")
+    private String password;
+
     @Bean
     public JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter() {
         return new JwtGrantedAuthoritiesConverter();
@@ -24,7 +43,7 @@ public class ApplicationConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         // Replace the URI with the issuer URI of your Keycloak or other OIDC provider
-        return JwtDecoders.fromIssuerLocation("http://localhost:8082/realms/master");
+        return JwtDecoders.fromIssuerLocation(serverUrl+"/realms/"+realm);
     }
 
     @Bean
@@ -45,21 +64,6 @@ public class ApplicationConfig {
         return engine;
     }
 
-    @Value("${application.security.keycloak.serverUrl}")
-    private String serverUrl;
-    @Value("${application.security.keycloak.realm}")
-    private String realm;
-    @Value("${application.security.keycloak.clientId}")
-    private String clientId;
-    @Value("${application.security.keycloak.clientSecret}")
-    private String clientSecret;
-    @Value("${application.security.keycloak.grantType}")
-    private String grantType;
-    @Value("${application.security.keycloak.username}")
-    private String username;
-    @Value("${application.security.keycloak.password}")
-    private String password;
-
     @Bean
     public Keycloak keycloak() {
         return KeycloakBuilder.builder()
@@ -72,5 +76,15 @@ public class ApplicationConfig {
                 .password(password)
                 .build();
     }
+    @Bean
+    public PermissionEvaluator permissionEvaluator() {
+        return new CustomPermissionEvaluator();
+    }
 
+    @Bean
+    public MethodSecurityExpressionHandler expressionHandler(PermissionEvaluator permissionEvaluator) {
+        DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+        expressionHandler.setPermissionEvaluator(permissionEvaluator);
+        return expressionHandler;
+    }
 }

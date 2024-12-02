@@ -1,16 +1,16 @@
 package com.da.iam.service;
 
-import com.da.iam.dto.request.RoleDTO;
+import com.da.iam.dto.request.CreateRoleRequest;
+import com.da.iam.dto.request.DeletePermissionRequest;
+import com.da.iam.dto.request.DeleteRoleRequest;
+import com.da.iam.dto.request.UpdateRoleRequest;
 import com.da.iam.dto.response.BasedResponse;
-import com.da.iam.dto.response.RoleDtoResponse;
-import com.da.iam.dto.response.RolePermissionDtoResponse;
 import com.da.iam.entity.Permission;
 import com.da.iam.entity.Role;
 import com.da.iam.entity.RolePermissions;
 import com.da.iam.repo.PermissionRepo;
 import com.da.iam.repo.RolePermissionRepo;
 import com.da.iam.repo.RoleRepo;
-import com.da.iam.utils.InputUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,123 +27,91 @@ public class RoleService {
     private final PermissionRepo permissionRepo;
     private final RolePermissionRepo rolePermissionRepo;
 
-    public Set<Role> getRolesByUserId(UUID id) {
-        return roleRepo.findRolesByUserId(id);
-    }
-
-    public BasedResponse<?> searchAllByName(String name) {
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .data(roleRepo.findRoleByName(name))
-                .build();
-    }
-
-    public BasedResponse<?> create(RoleDTO roleDTO) {
-        InputUtils.isValidRoleDTO(roleDTO);
-        String name = roleDTO.getName();
-        if (roleRepo.findByNameIgnoreCase(name).isPresent()) {
-            throw new IllegalArgumentException("Role existed");
+    @Transactional
+    public BasedResponse<?> create(CreateRoleRequest request) {
+        String name = request.name();
+        if (roleRepo.existsByName(name)) {
+            throw new IllegalArgumentException("Role name existed");
         }
-        Set<Permission> permissions;
-        Set<RolePermissions> rolePermissions = new HashSet<>();;
-        Set<RolePermissionDtoResponse> rolePermissionDtoResponse = new HashSet<>();
-
-
-        if (roleDTO.getPermissionsResourceName() != null && !roleDTO.getPermissionsResourceName().isEmpty()) {
-            permissions = getPermission(roleDTO.getPermissionsResourceName());
-
+        Set<Permission> permissions = getPermissions(request.permissionsResourceName());
         try {
             roleRepo.save(Role.builder().name(name).build());
-            UUID roleId = roleRepo.findRoleByName(name).getRoleId();
-
-                for (Permission permission : permissions) {
-                    RolePermissions rP1 = RolePermissions.builder()
-                            .roleId(roleId)
-                            .permissionId(permission.getPermissionId())
-                            .scope(permission.getScope())
-                            .resourceCode(permission.getResourceCode())
-                            .build();
-                    rolePermissions.add(rP1);
-                    rolePermissionDtoResponse.add(RolePermissionDtoResponse.builder()
-                            .permissionId(permission.getPermissionId())
-                            .scope(permission.getScope())
-                            .resourceCode(permission.getResourceCode())
-                            .resourceName(permission.getResourceName())
-                            .build());
-                }
-                rolePermissionRepo.saveAll(rolePermissions);
-
-
-
+            UUID roleId = roleRepo.findRoleIdByName(name).orElseThrow(() -> new IllegalArgumentException("Role id not found after create role"));
+            Set<RolePermissions> rolePermissions = new HashSet<>();
+            fetchRolePermissions(rolePermissions, roleId, permissions);
+            rolePermissionRepo.saveAll(rolePermissions);
+            return new BasedResponse().created("Create role successful",rolePermissions);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Create role failed");
-        }}
-        Role r = roleRepo.findByNameIgnoreCase(name).orElseThrow();
-        return BasedResponse.builder()
-                .httpStatusCode(201)
-                .requestStatus(true)
-                .data(RoleDtoResponse.builder()
-                        .name(r.getName())
-                        .rolePermissionDtoResponse(rolePermissionDtoResponse)
-                        .build())
-
-                .message("Create role successful")
-                .build();
+        }
     }
 
     @Transactional
-    public BasedResponse<?> updateById(RoleDTO roleDTO) {
-        InputUtils.isValidRoleDTO(roleDTO);
-        String name = roleDTO.getName();
-        UUID id = roleDTO.getRoleId();
-        if (id == null || id.toString().isEmpty() ||
-                roleRepo.findById(id).isEmpty()
-                || !roleRepo.findRoleByNameExceptId(name, id).isEmpty()) {
-            throw new IllegalArgumentException("Invalid Role");
+    public BasedResponse<?> updateById(UpdateRoleRequest request) {
+        Set<Permission> permissions = getPermissions(request.permissionsResourceName());
+        String name = request.name();
+        UUID id = UUID.fromString(request.roleId());
+        boolean deleted = request.deleted();
+        if (!roleRepo.existsById(id)) {
+            throw new IllegalArgumentException("Role id not found");
+        } else if (roleRepo.existsByNameAndRoleIdNot(name, id)) {
+            throw new IllegalArgumentException("Role name existed");
         }
         try {
-            roleRepo.updateRoleById(id, name);
+            isOperationSuccess(roleRepo.updateRoleById(id, name, deleted), "Update role failed");
+            Set<RolePermissions> rolePermissions = new HashSet<>();
+            fetchRolePermissions(rolePermissions, id, permissions);
+            rolePermissionRepo.deleteByRoleId(id);
+            rolePermissionRepo.saveAll(rolePermissions);
+            return new BasedResponse().success("Update successful", rolePermissions);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Update role failed");
         }
-
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .message("Update successful")
-                .data(roleRepo.findByNameIgnoreCase(name))
-                .build();
     }
+
     @Transactional
-    public BasedResponse<?> deleteRoleById(String name) {
-        Optional<Role> role = roleRepo.findByNameIgnoreCase(name);
-        if (role.isPresent()) {
-            throw new IllegalArgumentException("Invalid Role");
+    public BasedResponse<?> deleteById(DeleteRoleRequest request) {
+        UUID id = UUID.fromString(request.roleId());
+        if (!roleRepo.existsById(id)) {
+            throw new IllegalArgumentException("Role id not found");
         }
         try {
-            roleRepo.softDeleteRoleById(role.get().getRoleId());
+            isOperationSuccess(roleRepo.softDeleteRoleById(id), "Delete role failed");
+            return new BasedResponse().success("Deleted successful", roleRepo.findById(id).orElseThrow());
         } catch (Exception ex) {
             throw new IllegalArgumentException("Delete role failed");
         }
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .message("Delete successful")
-                .data(role.get())
-                .build();
+
     }
-    private Set<Permission> getPermission(Set<String> roles) {
+
+    private Set<Permission> getPermissions(Set<String> rqPermission) {
         Set<Permission> permissionsSet = new HashSet<>();
-        for (String r : roles) {
-            Optional<Permission> permission = permissionRepo.findByResourceNameIgnoreCase(r);
-            if(permission.isEmpty() || permission.get().isDeleted()){
-                throw new IllegalArgumentException("There is permission that was deleted or not existed");
-            }
-            permissionsSet.add(permission.get());
-        }
+        rqPermission.stream()
+                .map(String::trim) // Trim each permission name
+                .map(permissionRepo::findByResourceNameIgnoreCase)
+                .peek(permission -> {
+                    if (permission.isEmpty()||permission.get().isDeleted()) {
+                        throw new IllegalArgumentException("Permission not found");
+                    }
+                })
+                .map(Optional::get)
+                .forEach(permissionsSet::add);
         return permissionsSet;
     }
 
+    private void fetchRolePermissions(Set<RolePermissions> rolePermissions, UUID roleId, Set<Permission> permissions) {
+        permissions.stream().map(rolePermission -> RolePermissions.builder()
+                        .roleId(roleId)
+                        .permissionId(rolePermission.getPermissionId())
+                        .scope(rolePermission.getScope())
+                        .resourceCode(rolePermission.getResourceCode())
+                        .build())
+                .forEach(rolePermissions::add);
+    }
 
+    private void isOperationSuccess(int isSuccess, String message) {
+        if (isSuccess == 0) {
+            throw new IllegalArgumentException(message);
+        }
+    }
 }

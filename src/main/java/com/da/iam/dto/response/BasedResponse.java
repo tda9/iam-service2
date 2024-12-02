@@ -12,6 +12,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Data
 @Builder
+@NoArgsConstructor
 public class BasedResponse<T> implements Serializable {
     private boolean requestStatus;
     private int httpStatusCode;
@@ -36,6 +37,20 @@ public class BasedResponse<T> implements Serializable {
         this.setMessage(message);
         this.setRequestStatus(true);
         this.setData(data);
+        return this;
+    }
+    public BasedResponse<T> created(String message, T data){
+        this.setRequestStatus(true);
+        this.setHttpStatusCode(201);
+        this.setMessage(message);
+        this.setRequestStatus(true);
+        this.setData(data);
+        return this;
+    }
+    public BasedResponse<T> badRequest(String message){
+        this.setRequestStatus(false);
+        this.setHttpStatusCode(400);
+        this.setMessage(message);
         return this;
     }
 

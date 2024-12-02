@@ -27,10 +27,12 @@ public class User extends BaseEntity {
     private String phone;
     private LocalDate dob;
     private String image;
-
+    @Builder.Default
+    private boolean isLock = false;
     @Column(name = "is_verified")
     private boolean isVerified;
-
+    @Builder.Default
+    private boolean deleted = false;
     public User() {
         super();
     }

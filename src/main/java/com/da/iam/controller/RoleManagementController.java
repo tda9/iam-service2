@@ -1,7 +1,8 @@
 package com.da.iam.controller;
 
-import com.da.iam.dto.request.PermissionDTO;
-import com.da.iam.dto.request.RoleDTO;
+import com.da.iam.dto.request.CreateRoleRequest;
+import com.da.iam.dto.request.DeleteRoleRequest;
+import com.da.iam.dto.request.UpdateRoleRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.service.RoleService;
 import jakarta.validation.Valid;
@@ -10,26 +11,25 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/iam")
+//@RequestMapping("")
 @RequiredArgsConstructor
 public class RoleManagementController {
 
     private final RoleService roleService;
 
     //@PreAuthorize("hasAuthority('SYSTEM_MANAGER.CREATE')")
-    @PostMapping("/roles")
-    public BasedResponse<?> create(@RequestBody @Valid RoleDTO roleDTO) {
-        return roleService.create(roleDTO);
+    @PostMapping("/roles/create")
+    public BasedResponse<?> create(@RequestBody @Valid CreateRoleRequest createRoleRequest) {
+        return roleService.create(createRoleRequest);
     }
-
-    @PreAuthorize("hasAuthority('ROLE.UPDATE')")
+    //@PreAuthorize("hasAuthority('SUPER-GUEST.UPDATE')")
     @PutMapping("/roles")
-    public BasedResponse<?> updateByName(@RequestBody @Valid RoleDTO roleDTO){
-        return roleService.updateById(roleDTO);
+    public BasedResponse<?> updateById(@RequestBody @Valid UpdateRoleRequest request){
+        return roleService.updateById(request);
     }
-    @PreAuthorize("hasAuthority('ROLE.DELETE')")
+    //@PreAuthorize("hasAuthority('ROLE.DELETE')")
     @DeleteMapping("/roles")
-    public BasedResponse<?> deleteByName(@RequestParam @Valid String name){
-        return roleService.deleteRoleById(name);
+    public BasedResponse<?> deleteById(@RequestBody @Valid DeleteRoleRequest request){
+        return roleService.deleteById(request);
     }
 }

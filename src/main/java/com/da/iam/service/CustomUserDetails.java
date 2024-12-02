@@ -18,7 +18,7 @@ public class CustomUserDetails implements UserDetails {
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
-
+    private boolean locked;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -42,7 +42,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !isLocked();
     }
 
     @Override

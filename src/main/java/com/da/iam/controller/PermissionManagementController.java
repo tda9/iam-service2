@@ -1,14 +1,13 @@
 package com.da.iam.controller;
 
 
-import com.da.iam.dto.request.PermissionDTO;
+import com.da.iam.dto.request.CreatePermissionRequest;
+import com.da.iam.dto.request.DeletePermissionRequest;
+import com.da.iam.dto.request.UpdatePermissionRequest;
 import com.da.iam.dto.response.BasedResponse;
-import com.da.iam.entity.Permission;
 import com.da.iam.service.PermissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,17 +33,26 @@ public class PermissionManagementController {
 //    }
 
     @PostMapping("/permissions")
-    public BasedResponse<?> create(@RequestBody @Valid PermissionDTO permissionDTO) {
+    public BasedResponse<?> create(@RequestBody @Valid CreatePermissionRequest permissionDTO) {
         return permissionService.create(permissionDTO);
     }
 
     @PutMapping("/permissions")
-    public BasedResponse<?> updateByPermissionId(@RequestBody @Valid PermissionDTO permissionDTO){
-        return permissionService.updateById(permissionDTO);
+    public BasedResponse<?> updateById(@RequestBody @Valid UpdatePermissionRequest request){
+        return permissionService.updateById(request);
     }
 
-    @DeleteMapping("/permissions")
-    public BasedResponse<?> softDeleteByName(@RequestBody PermissionDTO permissionDTO){
-        return permissionService.deletePermission(permissionDTO);
+//    @PutMapping("/permissions/resource-name")
+//    public BasedResponse<?> updateByResourceName(@RequestBody @Valid UpdatePermissionRequest request){
+//        return permissionService.updateByResourceName(request);
+//    }
+
+    @DeleteMapping("/permissions/id")
+    public BasedResponse<?> deleteById(@RequestBody DeletePermissionRequest request){
+        return permissionService.deleteById( request);
     }
+//    @DeleteMapping("/permissions/resource-name")
+//    public BasedResponse<?> deleteByResourceName(@RequestBody DeletePermissionRequest request){
+//        return permissionService.deleteByResourceName( request);
+//    }
 }

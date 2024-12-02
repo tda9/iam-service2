@@ -12,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -48,9 +49,9 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
-                                "/", "/iam/*",
+                                "/", "/iam/*","/roles/create","users/create",
                                 "/register", "/confirmation-registration",
-                                "/login", "/get-new-access-token",
+                                "/login", "/get-new-access-token","/refresh-token",
                                 "/api/logout",
                                 "/forgot-password", "/reset-password",
                                 "/custom-login")//tra ve thong bao user login tren keycloak

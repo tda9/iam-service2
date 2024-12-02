@@ -25,10 +25,6 @@ public class JwtConverter implements Converter<Jwt, AbstractAuthenticationToken>
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter;
     private final JwtConverterProperties properties;
-//    public JwtConverter(JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter, JwtConverterProperties properties) {
-//        this.jwtGrantedAuthoritiesConverter = jwtGrantedAuthoritiesConverter;
-//        this.properties = properties;
-//    }
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {

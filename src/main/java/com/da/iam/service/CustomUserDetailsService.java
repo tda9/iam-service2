@@ -34,22 +34,18 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
         Set<GrantedAuthority> authorities = new HashSet<>();
         Set<Role> userRoles = roleRepo.findRolesByUserId(user.getUserId());
-        Set<List<RolePermissions>> rolePermissions = new HashSet<>();
-        for(Role r : userRoles){
-            rolePermissions.add(rolePermissionRepo.findAllByRoleId(r.getRoleId()));
-        }
+        List<RolePermissions> rolePermissions = rolePermissionRepo.findAllByRoleIdIn(userRoles.stream().map(Role::getRoleId).collect(Collectors.toSet()));
         return new CustomUserDetails(user.getEmail(),
                 user.getPassword(),
-                mapRolesToAuthorities(userRoles,rolePermissions));
+                mapRolesToAuthorities(userRoles,rolePermissions), user.isLock());
     }
-    public Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles, Set<List<RolePermissions>> permissions) {
+    public Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles, List<RolePermissions> permissions) {
         // Map roles to authorities
         Stream<GrantedAuthority> roleAuthorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()));
 
         // Flatten the nested List<Permission> in the Set and map them to authorities
         Stream<GrantedAuthority> permissionAuthorities = permissions.stream()
-                .flatMap(List::stream) // Flatten the list of permissions
                 .map(permission -> new SimpleGrantedAuthority(permission.getResourceCode()+"."+permission.getScope()));
         return Stream.concat(roleAuthorities, permissionAuthorities).collect(Collectors.toSet());
     }

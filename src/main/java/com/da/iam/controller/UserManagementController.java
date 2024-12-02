@@ -1,18 +1,27 @@
 package com.da.iam.controller;
 
 
+import com.da.iam.dto.request.CreateRoleRequest;
+import com.da.iam.dto.request.CreateUserRequest;
+import com.da.iam.dto.request.UpdateUserRequest;
+import com.da.iam.dto.response.BasedResponse;
+import com.da.iam.entity.User;
 import com.da.iam.repo.UserRoleRepo;
+import com.da.iam.service.KeycloakUserService;
 import com.da.iam.service.RoleService;
 import com.da.iam.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.sql.Update;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
 public class UserManagementController {
-    private final UserService userService;
-    private final RoleService roleService;
-    private final UserRoleRepo userRoleRepo;
+    private final UserServiceFactory userServiceFactory;
 
 //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
 //    @GetMapping("/user")
@@ -75,4 +84,14 @@ public class UserManagementController {
 //            users.add(EntityModel.of(userDto, linkTo(WebMvcLinkBuilder.methodOn(UserManagementController.class).getUser(user.getEmail())).withSelfRel()));
 //        }
 //    }
+
+    @PostMapping("/users/create")
+    public BasedResponse<?> create(@RequestBody @Valid CreateUserRequest request) {
+        return userServiceFactory.getUserService().create(request);
+    }
+
+    @PutMapping("/users")
+    public BasedResponse<?> updateById(@RequestBody @Valid UpdateUserRequest request) {
+        return userServiceFactory.getUserService().updateById(request);
+    }
 }

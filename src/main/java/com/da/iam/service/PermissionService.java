@@ -1,15 +1,17 @@
 package com.da.iam.service;
 
-import com.da.iam.dto.request.PermissionDTO;
+import com.da.iam.dto.request.CreatePermissionRequest;
+import com.da.iam.dto.request.DeletePermissionRequest;
+import com.da.iam.dto.request.UpdatePermissionRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.entity.Permission;
+import com.da.iam.exception.SaveToDatabaseFailedException;
 import com.da.iam.repo.PermissionRepo;
-import com.da.iam.utils.InputUtils;
+import com.da.iam.repo.RolePermissionRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,141 +21,100 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PermissionService {
     private final PermissionRepo permissionRepo;
+    private final RolePermissionRepo rolePermissionRepo;
 
     public Permission searchByResourceName(String name) {
         return permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow();
     }
-//    public Page<Permission> getAll(Pageable pageable){
-//        return permissionRepo.findAll(pageable);
-//    }
-//
-//    public BasedResponse<?> create(PermissionDTO permissionDTO){
-//        InputUtils.isValidPermissionDTO(permissionDTO);
-//        String name = permissionDTO.getName();
-//        if(permissionRepo.findByNameIgnoreCase(name).isPresent()){
-//            throw new IllegalArgumentException("Permission existed");
-//        }
-//        try {
-//            permissionRepo.save(Permission.builder().name(name).build());
-//        }catch(Exception ex){
-//            throw new IllegalArgumentException("Create permission failed");
-//        }
-//        return BasedResponse.builder()
-//                .httpStatusCode(201)
-//                .requestStatus(true)
-//                .data(permissionRepo.findByNameIgnoreCase(name))
-//                .message("Create permission successful")
-//                .build();
-//    }
-//
-//    @Transactional
-//    public BasedResponse<?> updateById(PermissionDTO permissionDTO){
-//        InputUtils.isValidPermissionDTO(permissionDTO);
-//        String name = permissionDTO.getName();
-//        UUID id = permissionDTO.getPermissionId();
-//        if(id==null || id.toString().isEmpty() ||
-//                permissionRepo.findById(id).isEmpty()
-//                || !permissionRepo.findPermissionsByNameExceptId(name,id).isEmpty()){
-//            throw new IllegalArgumentException("Invalid Permission");
-//        }
-//        try {
-//            permissionRepo.updatePermissionById(id,name);
-//        }catch(Exception ex){
-//            throw new IllegalArgumentException("Update permission failed");
-//        }
-//
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .message("Update successful")
-//                .data(permissionRepo.findByNameIgnoreCase(name))
-//                .build();
-//    }
-//
-//    @Transactional
-//    public BasedResponse<?> deletePermission(PermissionDTO permissionDTO){
-//        InputUtils.isValidPermissionDTO(permissionDTO);
-//        String name = permissionDTO.getName();
-//        if(permissionRepo.findByNameIgnoreCase(name).isEmpty()){
-//            throw new IllegalArgumentException("Invalid Permission");
-//        }
-//        try {
-//            permissionRepo.deletePermissionByName(name,true);
-//        }catch(Exception ex){
-//            throw new IllegalArgumentException("Soft delete permission failed");
-//        }
-//
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .message("Soft deleted successful")
-//                .data(permissionRepo.findByNameIgnoreCase(name))
-//                .build();
-//    }
-    public BasedResponse<?> create(PermissionDTO permissionDTO) {
-        InputUtils.isValidPermissionDTO(permissionDTO);
-        String resourceCode = permissionDTO.getResourceCode();
-        if (permissionRepo.findByResourceCodeIgnoreCase(resourceCode).isPresent()) {
-            throw new IllegalArgumentException("Permission's resource code existed");
+
+    public BasedResponse<?> create(CreatePermissionRequest request) {
+        String name = request.resourceName();
+        if (permissionRepo.existsByResourceName(name)) {
+            throw new IllegalArgumentException("Resource name existed");
         }
         try {
             permissionRepo.save(Permission.builder()
-                    .resourceCode(resourceCode)
-                    .resourceName(permissionDTO.getResourceName())
-                    .scope(permissionDTO.getScope())
-                    .deleted(permissionDTO.isDeleted())
+                    .resourceCode(request.resourceCode())
+                    .resourceName(request.resourceName())
+                    .scope(request.scope())
                     .build());
+            return new BasedResponse().created("Create permission successful", permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow());
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Create permission failed");
+            throw new SaveToDatabaseFailedException("Create permission failed: " + ex.getMessage());
         }
-        return BasedResponse.builder()
-                .httpStatusCode(201)
-                .requestStatus(true)
-                .data(permissionRepo.findByResourceCodeIgnoreCase(resourceCode))
-                .message("Create permission successful")
-                .build();
+
     }
 
     @Transactional
-    public BasedResponse<?> updateById(PermissionDTO permissionDTO) {
-        InputUtils.isValidPermissionDTO(permissionDTO);
-        String name = permissionDTO.getResourceCode();
-        String scope = permissionDTO.getScope();
-        UUID id = permissionDTO.getPermissionId();
-        if (id == null || id.toString().isEmpty() || permissionRepo.findById(id).isEmpty()
-                || permissionRepo.checkExistedPermission(name, id).isPresent()) {
-            throw new IllegalArgumentException("Invalid Permission");
+    public BasedResponse<?> updateById(UpdatePermissionRequest request) {
+        UUID id = UUID.fromString(request.permissionId());
+        String resourceName = request.resourceName();
+        String scope = request.scope();
+        String resourceCode = request.resourceCode();
+        boolean deleted = request.deleted();
+        if (!permissionRepo.existsByPermissionId(id)) {//kiem tra co ton tai ko
+            throw new IllegalArgumentException("Permission id not found");
+        } else if (permissionRepo.existsPermissionsByResourceCodeAndResourceNameAndScopeAndPermissionIdNot(resourceCode, resourceName, scope, id)) {//kiem tra co trung permission khac ko
+            throw new IllegalArgumentException("Permission field existed");
         }
         try {
-            permissionRepo.updatePermissionById(id, name, scope);
+            Permission permission = permissionRepo.findById(id).orElseThrow(()-> new IllegalArgumentException("HERE"));
+            permission.setDeleted(deleted);
+            permission.setScope(scope);
+            permission.setResourceName(resourceName);
+            permission.setResourceCode(resourceCode);
+            permissionRepo.save(permission);
+            // this will not work with auditorAware isOperationSuccess(permissionRepo.updatePermissionById(id, resourceCode, scope, resourceName, deleted), "Update permission failed");//update va kiem tra permission
+            rolePermissionRepo.updateResourceCodeAndScopeByPermissionId(resourceCode, scope, id);//update lai role_permission
+            return new BasedResponse().success("Update successful", permissionRepo.findByResourceNameIgnoreCase(resourceName).orElseThrow());
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Update permission failed");
+            throw new IllegalArgumentException("Update permission failed: "+ex
+                    .getMessage());
         }
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .message("Update successful")
-                .data(permissionRepo.findByResourceCodeIgnoreCase(name))
-                .build();
     }
+//    @Transactional
+//    public BasedResponse<?> updateByResourceName(UpdatePermissionRequest request) {
+//        String resourceName = request.resourceName();
+//        String scope = request.scope();
+//        String resourceCode = request.resourceCode();
+//        boolean deleted = request.deleted();
+//        if (!permissionRepo.existsByResourceName(resourceName)) {
+//            throw new IllegalArgumentException("Permission resource name not found");
+//        } else if (permissionRepo.existsPermissionsByResourceCodeAndScopeAndResourceNameNot(resourceCode, resourceName, scope)) {
+//            throw new IllegalArgumentException("Permission field existed");
+//        }
+//        try {
+//            isOperationSuccess(permissionRepo.updatePermissionByResourceName(resourceCode, scope, resourceName, deleted), "Update permission failed");
+//            return new BasedResponse().success("Update successful", permissionRepo.findByResourceNameIgnoreCase(resourceName).orElseThrow());
+//        } catch (Exception ex) {
+//            throw new IllegalArgumentException("Update permission failed");
+//        }
+//    }
 
     @Transactional
-    public BasedResponse<?> deletePermission(PermissionDTO permissionDTO) {
-        InputUtils.isValidPermissionDTO(permissionDTO);
-        String name = permissionDTO.getResourceCode();
-        if (permissionRepo.findByResourceCodeIgnoreCase(name).isEmpty()) {
-            throw new IllegalArgumentException("Invalid Permission");
+    public BasedResponse<?> deleteById(DeletePermissionRequest request) {
+        UUID id = UUID.fromString(request.permissionId());
+        if (permissionRepo.existsByPermissionId(id)) {
+            throw new IllegalArgumentException("Permission id not found");
         }
         try {
-            permissionRepo.deletePermissionByResourceCode(name);
+            isOperationSuccess(permissionRepo.deletePermissionById(id), "Delete permission failed");
+            return new BasedResponse().success("Deleted successful", permissionRepo.findById(id).orElseThrow());
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Soft delete permission failed");
+            throw new IllegalArgumentException("Delete permission failed");
         }
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .message("Soft deleted successful")
-                .data(permissionRepo.findByResourceCodeIgnoreCase(name))
-                .build();
+    }
+
+    private void isOperationSuccess(int isSuccess, String message) {
+        if (isSuccess == 0) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    @Value("${permission.scopes}")
+    private String scopes;
+
+    public List<String> getScopes() {
+        return List.of(scopes.split("\\|"));
     }
 }

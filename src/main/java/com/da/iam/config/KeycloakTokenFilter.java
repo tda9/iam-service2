@@ -1,5 +1,6 @@
 package com.da.iam.config;
 
+import com.da.iam.repo.UserRepo;
 import com.da.iam.service.CustomUserDetails;
 import com.da.iam.service.JWTService;
 import com.da.iam.service.UserService;
@@ -32,7 +33,7 @@ public class KeycloakTokenFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
 
     private final JwtDecoder jwtDecoder;
-    private  final UserService userService;
+    private final UserRepo userRepo;
     @Value("${application.authProvider}")
     private String authProvider;
     @Override
@@ -47,7 +48,7 @@ public class KeycloakTokenFilter extends OncePerRequestFilter {
                     System.out.println(jwt.getClaims());
                     String email = jwt.getClaim("preferred_username");
 
-                    if (email != null && userService.getUserByEmail(email).isPresent()) {
+                    if (email != null && userRepo.existsByEmail(email)) {
                         // Create authentication object and set it in the security context
                         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

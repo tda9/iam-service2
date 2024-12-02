@@ -1,19 +1,17 @@
 package com.da.iam.service;
 
 import com.da.iam.dto.request.LoginRequest;
-import com.da.iam.dto.request.LogoutDto;
+import com.da.iam.dto.request.LogoutRequest;
 import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
+import com.da.iam.dto.response.DefaultTokenResponse;
 import com.da.iam.entity.*;
 import com.da.iam.exception.UserNotFoundException;
 import com.da.iam.repo.*;
 
 
-import com.da.iam.utils.InputUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.keycloak.admin.client.Keycloak;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 
@@ -28,7 +26,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationService implements BaseService{
+public class AuthenticationService implements BaseAuthenticationService {
     private final JWTService jwtService;
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
@@ -41,40 +39,37 @@ public class AuthenticationService implements BaseService{
     private final BlackListTokenRepo blackListTokenRepo;
     private final UserService userService;
 
-    @Value("${application.security.keycloak.enabled}")
-    private String authProvider;
-    private final Keycloak keycloak;
-    private final KeycloakService keycloakService;
     @Override
+    @Transactional
     public BasedResponse<?> register(RegisterRequest request) {
-        InputUtils.isValidRegisterRequest(request);
         String email = request.email();
         String password = request.password();
-        if (userService.getUserByEmail(request.email()).isPresent()) { //check email ton tai
-            throw new IllegalArgumentException("Email existed");
+        if (userRepo.existsByEmail(email)) {
+            return new BasedResponse().badRequest("Email existed");
         }
-        Set<Role> roles = getRoles(request.role());//check hop le cac role co trong db ko
-        User newUser = User.builder().email(email).password(passwordEncoder.encode(password)).build();//khoi tao user
+        List<UUID> rolesId = getRoles(request.role());//check hop le cac role co trong db ko va tra ve list id cua cac role
+        User newUser = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .build();//khoi tao user
 
-        userService.saveUser(newUser);//save user
-        for (Role role : roles) {//save role cua user
-            UserRoles userRoles = new UserRoles(newUser.getUserId(), role.getRoleId());
-            userRoleRepo.saveUserRole(newUser.getUserId(), userRoles.getRoleId());
+        try {
+            userService.save(newUser);//save user
+            rolesId.forEach(roleId -> userRoleRepo.saveUserRole(userRepo.getUserIdByEmail(email).orElseThrow(() -> {
+                throw new IllegalArgumentException("Error during save user id to user_role table");
+            }), roleId));//save role cua user
+            var jwtToken = jwtService.generateToken(email);
+            var jwtRefreshToken = jwtService.generateRefreshToken(email);
+            DefaultTokenResponse tokenResponse = new DefaultTokenResponse(jwtToken, jwtRefreshToken, "Bearer");
+            //5 phut hieu luc, trong thoi gian do khong duoc gui them
+//          emailService.sendConfirmationRegistrationEmail(request.email(), tokenResponse.getAccessToken());
+//          authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            return new BasedResponse().success("Register successful", newUser);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Register failed");
         }
-
-        /*
-        //DEACTIVATE: send email confirm registration here
-        String token = passwordService.generateToken();
-        //5 phut hieu luc, trong thoi gian do khong duoc gui them
-        sendConfirmation(request.email(), token, userEntity);
-        */
-
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .build();
     }
+
     @Override
     public BasedResponse<?> login(LoginRequest request) {
         String email = request.email();
@@ -93,77 +88,64 @@ public class AuthenticationService implements BaseService{
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
         var jwtToken = jwtService.generateToken(userEntity.getEmail());
         var jwtRefreshToken = jwtService.generateRefreshToken(userEntity.getEmail());
+        DefaultTokenResponse tokenResponse = new DefaultTokenResponse(jwtToken, jwtRefreshToken, "Bearer");
         blackListTokenRepo.save(BlackListToken.builder().token(jwtToken)
-                .expirationDate(LocalDateTime.now().plusMinutes(10))
+                .expirationDate(LocalDateTime.now().plusMinutes(1))
                 .userId(userEntity.getUserId())
                 .build());
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .data(jwtToken)
-                .message(jwtRefreshToken)
-                .build();
+        return new BasedResponse().success("Login successful", tokenResponse);
     }
 
 
-    private Set<Role> getRoles(Set<String> roles) {
-        Set<Role> rolesSet = new HashSet<>();
-        for (String r : roles) {
-            Role role = roleRepo.findRoleByName(r);
-            if (role == null || role.isDeleted()) {
-                throw new IllegalArgumentException("There is role that was deleted");
-            }
-            rolesSet.add(role);
-        }
-        return rolesSet;
+    private List<UUID> getRoles(Set<String> requestRoles) {
+        return requestRoles.stream().map(String::trim)
+                .map(roleRepo::findRoleIdByName)
+                .map(Optional::orElseThrow)
+                .toList();
     }
+
     @Override
-    public <T> BasedResponse<?> getNewAccessToken(HttpServletRequest request) {
-        final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        final String refreshToken;
-        final String email;
-
-        //skip if the request does not have a JWT token
-        if (header == null || !header.startsWith("Bearer ")) {
-            return BasedResponse.builder()
-                    .requestStatus(false)
-                    .httpStatusCode(400)
-                    .message("Token not found")
-                    .build();
-        }
-        refreshToken = header.substring(7);
+    public <T> BasedResponse<?> getNewAccessToken(String refreshToken) {
         try {
-            email = jwtService.extractEmail(refreshToken);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        //check if the email is not null and the user is not authenticated
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            var userDetails = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found"));
-            try {
-                if (jwtService.isTokenValid(refreshToken, CustomUserDetails.builder().email(email).build())) {
-                    var accessToken = jwtService.generateToken(email);
-                    //blackListTokenRepo.save(new BlackListToken(accessToken, LocalDateTime.now().plusMinutes(10), LocalDateTime.now(), userDetails.getUserId()));
-//                    response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-//                    response.setHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.AUTHORIZATION);
-                   //new ObjectMapper().writeValue(response.getOutputStream(),
-                    return  BasedResponse.builder()
+            //UUID id = blackListTokenRepo.findByToken(accessToken).orElseThrow(() -> new IllegalArgumentException("Invalid access token")).getUserId();
+            //accesss token moi nhat va con han
+//            if (blackListTokenRepo.findTopByUserIdOrderByCreatedDateDesc(id).isPresent()
+//                    && jwtService.isTokenValid(accessToken, CustomUserDetails.builder().email(userDetails.getEmail()).build())) {
+//                return BasedResponse.builder()
+//                        .requestStatus(true)
+//                        .httpStatusCode(200)
+//                        .message("Access token is still valid")
+//                        .data(accessToken)
+//                        .build();
+//            } else if (blackListTokenRepo.findTopByUserIdOrderByCreatedDateDesc(id).isPresent()
+                    //&& !jwtService.isTokenValid(accessToken, CustomUserDetails.builder().email(userDetails.getEmail()).build())) {
+                if (jwtService.isRefreshTokenValid(refreshToken)) {
+                    String email = jwtService.extractEmail(refreshToken);
+                    var newAccessToken = jwtService.generateToken(email);
+                    UUID id = userRepo.findByEmail(email).orElseThrow().getUserId();
+                    blackListTokenRepo.save(new BlackListToken(newAccessToken, LocalDateTime.now().plusMinutes(1), id));
+                    return BasedResponse.builder()
                             .requestStatus(true)
                             .httpStatusCode(200)
-                            .message(refreshToken)
-                            .data(accessToken)
+                            .message("New access token")
+                            .data(newAccessToken)
                             .build();
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+                return BasedResponse.builder()
+                        .requestStatus(true)
+                        .httpStatusCode(200)
+                        .message("Invalid refresh token")
+                        .build();
+            //}
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
-        return null;
+
     }
+
     @Transactional//tim hieu tai sao o day can transactional
-    public BasedResponse<?> logout(LogoutDto logoutDto) {
-        String email = logoutDto.email();
+    public BasedResponse<?> logout(LogoutRequest request) {
+        String email = request.email();
         User u = userRepo.findByEmail(email).orElseThrow();
         blackListTokenRepo.deleteAllByUserId(u.getUserId());
         return BasedResponse.builder()
@@ -179,7 +161,7 @@ public class AuthenticationService implements BaseService{
     }
 
     @Override
-    public BasedResponse<?> getNewAccessTokenKeycloak(LogoutDto logoutDto) {
+    public BasedResponse<?> getNewAccessTokenKeycloak(LogoutRequest request) {
         return null;
     }
 }

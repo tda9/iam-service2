@@ -17,11 +17,11 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 public class Role extends BaseEntity {
-
     @Id
     @Column(name = "role_id")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID roleId;
     private String name;
-    private boolean deleted;
+    @Builder.Default
+    private boolean deleted = false;
 }
