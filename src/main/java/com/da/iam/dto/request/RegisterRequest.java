@@ -2,6 +2,7 @@ package com.da.iam.dto.request;
 
 import com.da.iam.entity.Role;
 import com.da.iam.utils.InputUtils;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,5 +23,6 @@ public record RegisterRequest(
         LocalDate dob,
         @Pattern(regexp = InputUtils.PHONE_NUMBER_PATTERN, message = "Invalid phone number format")
         String phone,
+        @NotNull(message = "User's roles cannot be  null")
         Set<String> role) {
 }

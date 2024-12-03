@@ -14,15 +14,20 @@ public record CreateUserRequest(
         @NotEmpty
         @Pattern(regexp = InputUtils.EMAIL_PATTERN, message = "Invalid email format")
         String email,
-        //@Pattern(regexp = InputUtils.DOB_PATTERN, message = "Invalid date of birth format")
-        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        @DateTimeFormat(pattern = InputUtils.DOB_PATTERN)
         @Past(message = "Date of birth must be in the past")
         LocalDate dob,
         @Pattern(regexp = InputUtils.PHONE_NUMBER_PATTERN, message = "Invalid phone number format")
         String phone,
-        @NotNull
+        @NotNull(message = "Image cannot be null")
         String image,
-        @NotNull(message = "role cannot be null")
+        @NotNull(message = "username cannot be null")
+        String username,
+        @NotNull(message = "firstName cannot be null")
+        String firstName,
+        @NotNull(message = "lastName cannot be null")
+        String lastName,
+        @NotNull(message = "User's roles cannot be null")
         Set<String> role) {
 
 }

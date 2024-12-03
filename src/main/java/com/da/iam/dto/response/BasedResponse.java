@@ -23,15 +23,16 @@ public class BasedResponse<T> implements Serializable {
     private T data;
 
     @JsonIgnore
-    private RuntimeException exception;
+    private Exception exception;
 
-    public BasedResponse<T> fail(String message, RuntimeException ex){
+    public BasedResponse<T> fail(String message, Exception ex){
         this.setException(ex);
         this.setHttpStatusCode(400);
         this.setMessage(message);
         this.setRequestStatus(false);
         return this;
     }
+
     public BasedResponse<T> success(String message, T data){
         this.setHttpStatusCode(200);
         this.setMessage(message);

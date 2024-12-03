@@ -50,42 +50,54 @@ public class GlobalExceptionHandler {
                 .build());
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
         StringBuilder errorMessages = new StringBuilder();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errorMessages.append(error.getField()).append(": ").append(error.getDefaultMessage()).append("\n");
         }
-        return new ResponseEntity<>(errorMessages.toString(), HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(BasedResponse.builder()
+                        .requestStatus(false)
+                        .httpStatusCode(400)
+                        .exception(ex)
+                        .message(errorMessages.toString())
+                        .build());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<String> handleConstraintViolationExceptions(ConstraintViolationException ex) {
+    public ResponseEntity<?> handleConstraintViolationExceptions(ConstraintViolationException ex) {
         StringBuilder errorMessages = new StringBuilder();
         for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
             errorMessages.append(violation.getPropertyPath()).append(": ").append(violation.getMessage()).append("\n");
         }
-        return new ResponseEntity<>(errorMessages.toString(), HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(BasedResponse.builder()
+                        .requestStatus(false)
+                        .httpStatusCode(400)
+                        .exception(ex)
+                        .message(errorMessages.toString())
+                        .build());
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<?> handleErrorResponseException(HttpMessageNotReadableException ex) {
-        return ResponseEntity.status(400).body(BasedResponse.builder()
-                .requestStatus(false)
-                .httpStatusCode(400)
-                .message(ex.getMessage())
-                .exception(ex)
-                .build());
-    }
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<?> handleNullException(NullPointerException ex) {
-        return ResponseEntity.status(400).body(
-                BasedResponse.builder()
-                .requestStatus(false)
-                .httpStatusCode(400)
-                .message(ex.getMessage())
-                .exception(ex)
-                .build());
-    }
+//    @ExceptionHandler(HttpMessageNotReadableException.class)
+//    public ResponseEntity<?> handleErrorResponseException(HttpMessageNotReadableException ex) {
+//        return ResponseEntity.status(400).body(BasedResponse.builder()
+//                .requestStatus(false)
+//                .httpStatusCode(400)
+//                .message(ex.getMessage())
+//                .exception(ex)
+//                .build());
+//    }
+//    @ExceptionHandler(NullPointerException.class)
+//    public ResponseEntity<?> handleNullException(NullPointerException ex) {
+//        return ResponseEntity.status(400).body(
+//                BasedResponse.builder()
+//                .requestStatus(false)
+//                .httpStatusCode(400)
+//                .message(ex.getMessage())
+//                .exception(ex)
+//                .build());
+//    }
     @ExceptionHandler(UnexpectedTypeException.class)
     public ResponseEntity<?> handleWrongTypeException(UnexpectedTypeException ex) {
         return ResponseEntity.status(400).body(BasedResponse.builder()

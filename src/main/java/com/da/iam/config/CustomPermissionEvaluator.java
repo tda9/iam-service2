@@ -1,7 +1,6 @@
 package com.da.iam.config;
 
-import com.da.iam.service.UserService;
-import lombok.RequiredArgsConstructor;
+import com.da.iam.service.impl.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;

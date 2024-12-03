@@ -45,7 +45,7 @@ public class JWTService {
     }
     public String generateToken(String username) {
         PrivateKey privateKey = rsaKeyUtil.getPrivateKey();
-        return Jwts.builder().setSubject(username).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 1000*60*1))//10 phut
+        return Jwts.builder().setSubject(username).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
     }

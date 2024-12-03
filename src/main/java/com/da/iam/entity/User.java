@@ -22,6 +22,9 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id")
     private UUID userId = UUID.randomUUID();
+    private String username;
+    private String firstName;
+    private String lastName;
     private String email;
     private String password;
     private String phone;

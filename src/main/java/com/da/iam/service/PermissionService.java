@@ -11,7 +11,9 @@ import com.da.iam.repo.RolePermissionRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,15 +21,13 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PermissionService {
     private final PermissionRepo permissionRepo;
     private final RolePermissionRepo rolePermissionRepo;
 
-    public Permission searchByResourceName(String name) {
-        return permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow();
-    }
-
     public BasedResponse<?> create(CreatePermissionRequest request) {
+        log.info("-------------------------------" + SecurityContextHolder.getContext().getAuthentication().getName() + " create permission");
         String name = request.resourceName();
         if (permissionRepo.existsByResourceName(name)) {
             throw new IllegalArgumentException("Resource name existed");
@@ -40,6 +40,8 @@ public class PermissionService {
                     .build());
             return new BasedResponse().created("Create permission successful", permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow());
         } catch (Exception ex) {
+            log.error(ex.getMessage());
+            log.info("-------------------------------" + SecurityContextHolder.getContext().getAuthentication().getName() + "failed create permission");
             throw new SaveToDatabaseFailedException("Create permission failed: " + ex.getMessage());
         }
 
@@ -58,7 +60,7 @@ public class PermissionService {
             throw new IllegalArgumentException("Permission field existed");
         }
         try {
-            Permission permission = permissionRepo.findById(id).orElseThrow(()-> new IllegalArgumentException("HERE"));
+            Permission permission = permissionRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("HERE"));
             permission.setDeleted(deleted);
             permission.setScope(scope);
             permission.setResourceName(resourceName);
@@ -68,7 +70,7 @@ public class PermissionService {
             rolePermissionRepo.updateResourceCodeAndScopeByPermissionId(resourceCode, scope, id);//update lai role_permission
             return new BasedResponse().success("Update successful", permissionRepo.findByResourceNameIgnoreCase(resourceName).orElseThrow());
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Update permission failed: "+ex
+            throw new IllegalArgumentException("Update permission failed: " + ex
                     .getMessage());
         }
     }

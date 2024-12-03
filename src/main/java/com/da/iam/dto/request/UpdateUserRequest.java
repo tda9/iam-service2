@@ -13,10 +13,15 @@ import java.util.Set;
 public record UpdateUserRequest(
         @NotEmpty
         String userId,
-        @NotEmpty
         @Pattern(regexp = InputUtils.EMAIL_PATTERN, message = "Invalid email format")
         String email,
-        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        @NotNull(message = "username cannot be null")
+        String username,
+        @NotNull(message = "firstName cannot be null")
+        String firstName,
+        @NotNull(message = "lastName cannot be null")
+        String lastName,
+        @DateTimeFormat(pattern = InputUtils.DOB_PATTERN)
         @Past(message = "Date of birth must be in the past")
         LocalDate dob,
         @Pattern(regexp = InputUtils.PHONE_NUMBER_PATTERN, message = "Invalid phone number format")

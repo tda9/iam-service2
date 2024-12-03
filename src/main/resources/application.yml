@@ -17,10 +17,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: secret
-#  sql:
-#    init:
-#      schema-locations: classpath:scheme.sql
-#      mode: always
+  #  sql:
+  #    init:
+  #      schema-locations: classpath:scheme.sql
+  #      mode: always
   mail:
     registrationTemplateName: RegisterConfirmationTemplate
     passwordResetTemplateName: PasswordResetTemplate
@@ -94,11 +94,28 @@ jwt:
       resource-id: iam-service-client-master
 
 logging:
+  file:
+    path: D:\\da\\log
   level:
     org:
+      springdoc: debug
+      hibernate:
+        sql: debug
+        type:
+          descriptor:
+          sql: Trace
       springframework:
         security: DEBUG
+
+
 server:
   port: 8080
 permission:
   scopes: "READ|WRITE|DELETE|UPDATE"
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  show-actuator: true
+

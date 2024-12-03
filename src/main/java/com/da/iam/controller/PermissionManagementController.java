@@ -8,51 +8,26 @@ import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.service.PermissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/iam")
+@RequestMapping("/permissions")
 @RequiredArgsConstructor
 public class PermissionManagementController {
     private final PermissionService permissionService;
-    @GetMapping("/permissions")
-    public BasedResponse<?> searchByResourceName(@RequestParam @Valid String name) {
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .data(permissionService.searchByResourceName(name))
-                .build();
-    }
-//    @PostMapping("/permissions")
-//    public BasedResponse<Object> getAll(Pageable pageable) {
-//        return BasedResponse.builder()
-//                .httpStatusCode(200)
-//                .requestStatus(true)
-//                .data(permissionService.getAll(pageable))
-//                .build();
-//    }
-
-    @PostMapping("/permissions")
+    @PostMapping("/create")
     public BasedResponse<?> create(@RequestBody @Valid CreatePermissionRequest permissionDTO) {
         return permissionService.create(permissionDTO);
     }
-
-    @PutMapping("/permissions")
-    public BasedResponse<?> updateById(@RequestBody @Valid UpdatePermissionRequest request){
+    @PreAuthorize("hasPermission('PERMISSIONS','UPDATE')")
+    @PutMapping("/update")
+    public BasedResponse<?> updateById(@RequestBody @Valid UpdatePermissionRequest request) {
         return permissionService.updateById(request);
     }
-
-//    @PutMapping("/permissions/resource-name")
-//    public BasedResponse<?> updateByResourceName(@RequestBody @Valid UpdatePermissionRequest request){
-//        return permissionService.updateByResourceName(request);
-//    }
-
-    @DeleteMapping("/permissions/id")
-    public BasedResponse<?> deleteById(@RequestBody DeletePermissionRequest request){
-        return permissionService.deleteById( request);
+    @PreAuthorize("hasPermission('PERMISSIONS','DELETE')")
+    @DeleteMapping("/delete")
+    public BasedResponse<?> deleteById(@RequestBody DeletePermissionRequest request) {
+        return permissionService.deleteById(request);
     }
-//    @DeleteMapping("/permissions/resource-name")
-//    public BasedResponse<?> deleteByResourceName(@RequestBody DeletePermissionRequest request){
-//        return permissionService.deleteByResourceName( request);
-//    }
 }

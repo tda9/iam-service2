@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class KeycloakTokenResponse {
+public class KeycloakTokenResponse implements BaseTokenResponse{
 
     @JsonProperty("access_token")
     private String accessToken;

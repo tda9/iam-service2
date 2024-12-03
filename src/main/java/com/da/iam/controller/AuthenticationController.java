@@ -1,13 +1,13 @@
 package com.da.iam.controller;
 
+import com.da.iam.controller.factory.AuthenticationServiceFactory;
 import com.da.iam.dto.request.LoginRequest;
 import com.da.iam.dto.request.LogoutRequest;
 import com.da.iam.dto.request.RegisterRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
-import com.da.iam.service.KeycloakAuthenticationService;
+import com.da.iam.service.impl.KeycloakAuthenticationService;
 import com.da.iam.service.PasswordService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,13 +35,17 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public BasedResponse<?> register(@RequestBody RegisterRequest request) {
-        return authenticationServiceFactory.getService().register(request);
+        return new BasedResponse()
+                .success("Register successful",
+                        authenticationServiceFactory.getService().register(request));
     }
 
     @PostMapping("/login")
     public BasedResponse<?> login(@RequestBody LoginRequest request) {
-            return authenticationServiceFactory.getService().login(request);
+        return new BasedResponse().success("Login successful",
+                authenticationServiceFactory.getService().login(request));
     }
+
     @GetMapping("/custom-login")
     public BasedResponse<?> redirectToKeycloakLogin() {
         return BasedResponse.builder()
@@ -52,7 +56,7 @@ public class AuthenticationController {
                 .build();
     }
 
-//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PostMapping("/change-password")
     public BasedResponse<?> changePassword(
             @RequestParam String currentPassword, @RequestParam String newPassword,
@@ -93,18 +97,16 @@ public class AuthenticationController {
     }
 
 
-    @PreAuthorize("hasPermission(null,'USER.VIEW')")
+    @PreAuthorize("hasPermission('HOMEPAGE','VIEW')")
     @GetMapping("/hello")
-    //@PreAuthorize("hasAnyRole('USER','ADMIN')")
     public String test() {
-        return "Hello World";
+        return "Hello HOMEPAGE";
     }
 
-    @PreAuthorize("hasPermission(null,'USER.READ')")
+    @PreAuthorize("hasPermission('DASHBOARD','VIEW')")
     @GetMapping("/admin")
-    //@PreAuthorize("hasAnyRole('ADMIN')")
     public String test1() {
-        return "Hello World USER_MANAGER";
+        return "Hello DASHBOARD ";
     }
 
     @PostMapping("/api/logout")
@@ -113,13 +115,8 @@ public class AuthenticationController {
         return "Logout request has been sent.";
     }
 
-    @PostMapping("/get-new-access-token")
-    public BasedResponse<?> getNewAccessToken(@RequestBody LogoutRequest request) {
-        return authenticationServiceFactory.getService().getNewAccessTokenKeycloak(request);
-    }
-
     @PostMapping("/refresh-token")
-    public BasedResponse<?> refreshToken(@RequestParam String refreshToken) {
-        return authenticationServiceFactory.getService().getNewAccessToken(refreshToken);
+    public BasedResponse<?> refreshToken(@RequestBody LogoutRequest request) {
+        return authenticationServiceFactory.getService().getNewAccessToken(request);
     }
 }

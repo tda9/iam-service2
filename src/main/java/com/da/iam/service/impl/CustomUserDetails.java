@@ -1,4 +1,4 @@
-package com.da.iam.service;
+package com.da.iam.service.impl;
 
 import lombok.*;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchConnectionDetails;

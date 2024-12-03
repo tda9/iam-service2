@@ -10,7 +10,7 @@ import java.util.UUID;
 public record UpdateRoleRequest (
         @NotEmpty(message = "Role id can not be empty")
         String roleId,
-        @NotEmpty(message = "Role name can not be empty")
+        @NotNull(message = "Role name can not be empty")
         String name,
         @NotEmpty(message = "Role permission can not be empty")
         Set<String> permissionsResourceName,

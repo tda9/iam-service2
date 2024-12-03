@@ -1,29 +1,31 @@
 package com.da.iam.controller;
 
 
-import com.da.iam.dto.request.CreateRoleRequest;
+import com.da.iam.controller.factory.UserServiceFactory;
 import com.da.iam.dto.request.CreateUserRequest;
+import com.da.iam.dto.request.SearchUserRequest;
 import com.da.iam.dto.request.UpdateUserRequest;
 import com.da.iam.dto.response.BasedResponse;
+import com.da.iam.dto.response.PageResponse;
 import com.da.iam.entity.User;
-import com.da.iam.repo.UserRoleRepo;
-import com.da.iam.service.KeycloakUserService;
-import com.da.iam.service.RoleService;
-import com.da.iam.service.UserService;
+import com.da.iam.service.impl.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.sql.Update;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/users")
 public class UserManagementController {
     private final UserServiceFactory userServiceFactory;
+    private final UserService userService;
 
-//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
 //    @GetMapping("/user")
 //    public BasedResponse<?> getUser(@RequestParam String email) {
 //        InputUtils.isValidEmail(email);
@@ -84,14 +86,26 @@ public class UserManagementController {
 //            users.add(EntityModel.of(userDto, linkTo(WebMvcLinkBuilder.methodOn(UserManagementController.class).getUser(user.getEmail())).withSelfRel()));
 //        }
 //    }
-
-    @PostMapping("/users/create")
+    @PreAuthorize("hasPermission('USERS','CREATE')")
+    @PostMapping("/create")
     public BasedResponse<?> create(@RequestBody @Valid CreateUserRequest request) {
-        return userServiceFactory.getUserService().create(request);
+        return new BasedResponse().success("Create successful",
+                userServiceFactory.getUserService().create(request));
     }
-
-    @PutMapping("/users")
+    @PreAuthorize("hasPermission('USERS','UPDATE')")
+    @PutMapping("/update")
     public BasedResponse<?> updateById(@RequestBody @Valid UpdateUserRequest request) {
         return userServiceFactory.getUserService().updateById(request);
+    }
+    @GetMapping("/search")
+    public BasedResponse<?> searchByKeyword(
+            @RequestBody @Valid SearchUserRequest request,
+            @RequestParam(required = false, defaultValue = "0") int currentPage,
+            @RequestParam(required = false, defaultValue = "1") int currentSize,
+            @RequestParam(required = false, defaultValue = "email") String sortBy,
+            @RequestParam(required = false, defaultValue = "ASC") String sort
+    ) {
+        Page<User> users = userService.searchByKeyword(request, currentPage, currentSize, sortBy, sort);
+        return new PageResponse<>(currentPage, users.getTotalPages(), currentSize, users.getTotalElements(), sortBy, sort, List.of(users.get()));
     }
 }

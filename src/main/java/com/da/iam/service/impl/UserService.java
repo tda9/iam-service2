@@ -1,16 +1,24 @@
-package com.da.iam.service;
+package com.da.iam.service.impl;
 
-import com.da.iam.dto.UserProfile;
 import com.da.iam.dto.request.CreateUserRequest;
+import com.da.iam.dto.request.SearchUserRequest;
 import com.da.iam.dto.request.UpdateUserRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.entity.User;
+import com.da.iam.exception.ErrorResponseException;
 import com.da.iam.exception.UserNotFoundException;
-import com.da.iam.repo.*;
-import com.da.iam.utils.InputUtils;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.repository.query.Param;
+import com.da.iam.repo.RoleRepo;
+import com.da.iam.repo.UserRepo;
+import com.da.iam.repo.UserRoleRepo;
+import com.da.iam.service.BaseService;
+import com.da.iam.service.BaseUserService;
+import com.da.iam.service.EmailService;
+import com.da.iam.service.PasswordService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,72 +26,76 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
-@RequiredArgsConstructor
+@Slf4j
 @Service
-public class UserService implements BaseUserService {
-
-    private final UserRepo userRepo;
+public class UserService extends BaseService implements BaseUserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private final RoleRepo roleRepo;
     private final UserRoleRepo userRoleRepo;
     private final PasswordService passwordService;
-    //private final KeycloakAuthenticationService keycloakAuthenticationService;
 
-    public User getUserById(UUID id) {
-        return userRepo.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+    public UserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, EmailService emailService, UserRoleRepo userRoleRepo, PasswordService passwordService) {
+        super(userRepo, roleRepo);
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.userRoleRepo = userRoleRepo;
+        this.passwordService = passwordService;
     }
 
-    //.orElseThrow(() -> new UserNotFoundException("User not found by getUserByEmail() in UserService"))
-//    public Optional<User> getUserByEmail(String email) {
-//        return userRepo.findByEmail(email);
-//    }
+    public Page<User> searchByKeyword(SearchUserRequest request, int currentPage, int currentSize, String sortBy, String sort) {
+        Pageable pageable = PageRequest.of(currentPage, currentSize, Sort.by(
+                Sort.Order.by(sortBy).with(Sort.Direction.fromString(sort))
+        ));
+        String keyword = "%"+request.keyword()+"%";
+        return userRepo.searchByKeyword(keyword, pageable);
+    }
 
-    public Iterable<User> getUsers() {
-        return userRepo.findAll();
+    private boolean isValidColumnName(String columnName) {
+        // Implement a method to validate if the column name is safe (e.g., check against a whitelist of columns)
+        List<String> validColumns = Arrays.asList(
+                "email",
+                "firstName",
+                "lastName",
+                "username");
+        return validColumns.contains(columnName);
     }
 
     @Override
-    public BasedResponse<?> create(CreateUserRequest request) {
+    public User create(CreateUserRequest request) {
         String email = request.email();
         LocalDate dob = request.dob();
         String image = request.image();
         String phone = request.phone();
-        if (userRepo.existsByEmail(email)) {
-            return new BasedResponse().badRequest("Email existed");
-        }
+        String username = request.username();
+        String lastName = request.firstName();
+        String firstName = request.firstName();
+        checkEmailExisted(email);
         List<UUID> rolesId = getRoles(request.role());//check hop le cac role co trong db ko va tra ve list id cua cac role
         String generatedPassword = passwordService.generateToken();
-
         emailService.sendEmail(email, "Your IAM Service Password", generatedPassword);//gui mat khau cho user
         User newUser = User.builder()
                 .dob(dob)
                 .image(image)
                 .phone(phone)
                 .email(email)
+                .username(username)
+                .firstName(firstName)
+                .lastName(lastName)
                 .password(passwordEncoder.encode(generatedPassword))
                 .build();//khoi tao user
 
         try {
-            userRepo.save(newUser);//save user
-            rolesId.forEach(roleId -> userRoleRepo.saveUserRole(userRepo.getUserIdByEmail(email).orElseThrow(() -> {
-                throw new IllegalArgumentException("Error during save user id to user_role table");
-            }), roleId));//save role cua user
-//            var jwtToken = jwtService.generateToken(email);
-//            var jwtRefreshToken = jwtService.generateRefreshToken(email);
-//            DefaultTokenResponse tokenResponse = new DefaultTokenResponse(jwtToken, jwtRefreshToken, "Bearer");
-            ////5 phut hieu luc, trong thoi gian do khong duoc gui them
+            User user = userRepo.save(newUser);
+            rolesId.forEach(roleId -> userRoleRepo.saveUserRole(user.getUserId(), roleId));
 //          emailService.sendConfirmationRegistrationEmail(request.email(), tokenResponse.getAccessToken());
-//          authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-
-            //keycloakAuthenticationService.createKeycloakUser(email,generatedPassword);
-
-            return new BasedResponse().success("Create successful", newUser);
+            return user;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Create failed: " + e.getMessage());
+            throw new ErrorResponseException("Create failed: " + e.getMessage());
         }
     }
 
@@ -112,34 +124,21 @@ public class UserService implements BaseUserService {
             user.setDeleted(delete);
             user.setVerified(isVerified);
             userRepo.save(user);
-            isOperationSuccess(userRoleRepo.deleteByUserId(user.getUserId()),"Update failed");
-            addRolesToUser(user.getUserId(),roles);
+            isOperationSuccess(userRoleRepo.deleteByUserId(user.getUserId()), "Update failed");
+            addRolesToUser(user.getUserId(), roles);
             return new BasedResponse().success("Update successful", userRepo.findById(user.getUserId()));
         } catch (Exception ex) {
             throw new IllegalArgumentException("Update user failed");
         }
     }
 
-
     public void save(User user) {
         userRepo.save(user);
     }
 
-    private List<UUID> getRoles(Set<String> requestRoles) {
-        return requestRoles.stream().map(String::trim)
-                .map(roleRepo::findRoleIdByName)
-                .peek(role -> {
-                    if (role.isEmpty() || roleRepo.findById(role.get()).get().isDeleted()) {
-                        throw new IllegalArgumentException("Role not found or was deleted");
-                    }
-                })
-                .map(Optional::get)
-                .toList()
-                ;
-    }
-
     private void isOperationSuccess(int isSuccess, String message) {
         if (isSuccess == 0) {
+            log.error("Error at isOperationSuccess");
             throw new IllegalArgumentException(message);
         }
     }
@@ -147,27 +146,19 @@ public class UserService implements BaseUserService {
     @Transactional
     public void addRolesToUser(UUID userId, List<UUID> roleIds) {
         for (UUID roleId : roleIds) {
-            userRoleRepo.insertUserRoles(userId,roleId);
+            userRoleRepo.insertUserRoles(userId, roleId);
         }
     }
 
-    public boolean userHasPermission(Authentication currentUser,Object target, Object requiredPermission ){
+    public boolean userHasPermission(Authentication currentUser, Object target, Object requiredPermission) {
         List<GrantedAuthority> authorities = new ArrayList<>(currentUser.getAuthorities());
-
-        // Ensure the requiredPermission is a String
-        if (!(requiredPermission instanceof String)) {
-            throw new IllegalArgumentException("Required permission must be a string.");
-        }
-
-        String requiredAction = (String) requiredPermission;
-
-        // Check user's roles or permissions against the required action
+        log.info("USER GRANT----------SYSTEM" + String.valueOf(target) + "." + String.valueOf(requiredPermission));
         for (GrantedAuthority authority : authorities) {
-            if (authority.getAuthority().equals(requiredAction)) {
-                return true; // User has the required permission
+            log.info(authority + "---" + String.valueOf(target) + "." + String.valueOf(requiredPermission));
+            if (authority.getAuthority().equals(String.valueOf(target) + "." + String.valueOf(requiredPermission))) {
+                return true;
             }
         }
-
         return false;
     }
 }
