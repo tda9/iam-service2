@@ -22,15 +22,20 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id")
     private UUID userId = UUID.randomUUID();
+    private String username;
+    private String firstName;
+    private String lastName;
     private String email;
     private String password;
     private String phone;
     private LocalDate dob;
     private String image;
-
+    @Builder.Default
+    private boolean isLock = false;
     @Column(name = "is_verified")
     private boolean isVerified;
-
+    @Builder.Default
+    private boolean deleted = false;
     public User() {
         super();
     }

@@ -1,8 +1,7 @@
 package com.da.iam.config;
 
-import com.da.iam.service.CustomUserDetails;
+import com.da.iam.repo.UserRepo;
 import com.da.iam.service.JWTService;
-import com.da.iam.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,19 +10,16 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -32,7 +28,7 @@ public class KeycloakTokenFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
 
     private final JwtDecoder jwtDecoder;
-    private  final UserService userService;
+    private final UserRepo userRepo;
     @Value("${application.authProvider}")
     private String authProvider;
     @Override
@@ -47,7 +43,7 @@ public class KeycloakTokenFilter extends OncePerRequestFilter {
                     System.out.println(jwt.getClaims());
                     String email = jwt.getClaim("preferred_username");
 
-                    if (email != null && userService.getUserByEmail(email).isPresent()) {
+                    if (email != null && userRepo.existsByEmail(email)) {
                         // Create authentication object and set it in the security context
                         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

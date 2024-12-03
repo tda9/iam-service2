@@ -26,7 +26,8 @@ public class RSAKeyUtil {
         KeyFactory keyFactory = null;
         PKCS8EncodedKeySpec spec = null;
         try {
-            privateKeyPEM = new String(Files.readAllBytes(Paths.get(PRIVATE_KEY_PATH))).replace("-----BEGIN PRIVATE KEY-----", "")
+            privateKeyPEM = new String(Files.readAllBytes(Paths.get(PRIVATE_KEY_PATH)))
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace("-----END PRIVATE KEY-----", "")
                     .replaceAll("\\s", "");
             byte[] keyBytes = Base64.getDecoder().decode(privateKeyPEM);

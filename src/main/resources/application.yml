@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
   application:
     name: iam-service2
   jpa:
@@ -13,11 +17,13 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: secret
-#  sql:
-#    init:
-#      schema-locations: classpath:scheme.sql
-#      mode: always
+  #  sql:
+  #    init:
+  #      schema-locations: classpath:scheme.sql
+  #      mode: always
   mail:
+    registrationTemplateName: RegisterConfirmationTemplate
+    passwordResetTemplateName: PasswordResetTemplate
     host: smtp.gmail.com
     port: 587
     username: tducanh157@gmail.com
@@ -34,12 +40,12 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8082/realms/master
+          issuer-uri: ${application.security.keycloak.serverUrl}/realms/${application.security.keycloak.realm}
           jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
           jws-algorithms: RS256
         opaquetoken:
-          client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
-          client-id: iam-service-client-master
+          client-secret: ${application.security.keycloak.clientSecret}
+          client-id: ${application.security.keycloak.clientId}
 
       client:
         registration:
@@ -48,14 +54,20 @@ spring:
             client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
             scope: openid,profile,email
             authorization-grant-type: authorization_code
-            redirect-uri: "http://localhost:8082"
+            redirect-uri: ${application.security.keycloak.serverUrl}
             provider: keycloak
         provider:
           keycloak:
-            issuer-uri: http://localhost:8082/realms/master
+            issuer-uri: ${application.security.keycloak.serverUrl}/realms/${application.security.keycloak.realm}
 
+confirmation:
+  registration:
+    url: http://localhost:8080/confirmation-registration
 application:
-  authProvider: KEYCLOAK
+  file:
+    upload-dir: D:\\da\\images
+  #KEYCLOAK
+  authProvider: DEFAULT
   security:
     jwt:
       #privateKey
@@ -82,7 +94,28 @@ jwt:
       resource-id: iam-service-client-master
 
 logging:
+  file:
+    path: D:\\da\\log
   level:
     org:
+      springdoc: debug
+      hibernate:
+        sql: debug
+        type:
+          descriptor:
+          sql: Trace
       springframework:
         security: DEBUG
+
+
+server:
+  port: 8080
+permission:
+  scopes: "READ|WRITE|DELETE|UPDATE"
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  show-actuator: true
+

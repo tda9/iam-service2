@@ -1,25 +1,35 @@
 package com.da.iam.service;
 
-import com.da.iam.dto.request.LoginRequest;
-import com.da.iam.dto.request.LogoutDto;
-import com.da.iam.dto.request.RegisterRequest;
-import com.da.iam.dto.response.BasedResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import com.da.iam.repo.RoleRepo;
+import com.da.iam.repo.UserRepo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-
-public interface BaseService {
-    BasedResponse<?> register(RegisterRequest request);
-
-    BasedResponse<?> login(LoginRequest loginRequest);
-
-    <T> BasedResponse<?> getNewAccessToken(HttpServletRequest request);
-
-    BasedResponse<?> logout(LogoutDto logoutDto);
-    <T> BasedResponse<?> getNewAccessToken(T request);
-
-
-    BasedResponse<?> getNewAccessTokenKeycloak(LogoutDto logoutDto);
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+@Slf4j
+@RequiredArgsConstructor
+public abstract class BaseService {
+    protected final UserRepo userRepo;
+    protected final RoleRepo roleRepo;
+    protected void checkEmailExisted(String email){
+        if (userRepo.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email existed");
+        }
+    }
+    protected List<UUID> getRoles(Set<String> requestRoles) {
+        return requestRoles.stream()
+                .map(String::trim)
+                .map(roleRepo::findRoleIdByName)
+                .peek(role -> {
+                    if(role.isEmpty() || roleRepo.findById(role.get()).get().isDeleted()){
+                        log.error("------Error at getRoles()-----");
+                        throw new IllegalArgumentException("Role not found");
+                    }
+                })
+                .map(Optional::get)
+                .toList();
+    }
 }

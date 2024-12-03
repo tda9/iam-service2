@@ -23,26 +23,22 @@ public interface RoleRepo extends JpaRepository<Role, UUID> {
             nativeQuery = true)
     Set<Role> findRolesByUserId(@Param("userId") UUID userId);
 
-    @Query(value = "SELECT r.* FROM roles r " + "WHERE r.name = :name",
-            nativeQuery = true)
-    Role findRoleByName(String name);
+    @Query("SELECT r.roleId FROM Role r WHERE r.name = :name")
+    Optional<UUID> findRoleIdByName(String name);
 
     Optional<Role> findByNameIgnoreCase(String name);
 
-    @Query("SELECT r FROM Role r WHERE r.name = :name AND r.roleId != :id")
-    List<Role> findRoleByNameExceptId(@Param("name") String name,
-               @Param("id") UUID id);
     @Transactional
     @Modifying
-    @Query("UPDATE Role p SET p.name = :name WHERE p.roleId = :roleId")
-    void updateRoleById(@Param("roleId") UUID roleId, @Param("name") String name);
-
-    @Query("SELECT p FROM Permission p RIGHT JOIN RolePermissions rp ON rp.permissionId = p.permissionId WHERE rp.roleId = :roleId")
-    Set<Permission> findRolePermission(@Param("roleId") UUID roleId);
+    @Query("UPDATE Role p SET p.name = :name, p.deleted = :deleted WHERE p.roleId = :roleId")
+    int updateRoleById(@Param("roleId") UUID roleId, @Param("name") String name,boolean deleted);
 
     @Transactional
     @Modifying
     @Query("UPDATE Role p SET p.deleted = true WHERE p.roleId = :roleId")
     int softDeleteRoleById(@Param("roleId") UUID roleId);
+    boolean existsByNameAndRoleIdNot(String name,UUID roleId);
+    boolean existsByName(String name);
+
 
 }

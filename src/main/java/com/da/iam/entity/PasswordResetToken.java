@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@AllArgsConstructor
+
 @Entity
 @Table(name = "password_reset_token")
 public class PasswordResetToken extends BaseEntity {
@@ -25,8 +25,13 @@ public class PasswordResetToken extends BaseEntity {
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
     @Column(name = "user_id")
-    private Long userId;
+    private UUID userId;
     public PasswordResetToken() {
-        super();
+    }
+
+    public PasswordResetToken(String token, LocalDateTime expirationDate,UUID userId ){
+        this.token = token;
+        this.expirationDate = expirationDate;
+        this.userId = userId;
     }
 }

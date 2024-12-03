@@ -10,7 +10,7 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
-@NoArgsConstructor
+
 @AllArgsConstructor
 @Table(name = "permissions")
 @Entity
@@ -27,4 +27,8 @@ public class Permission extends BaseEntity {
     private String resourceCode;
     private boolean deleted;
     //resource code(USER), scope(VIEW), resource name(QUAN LY NGUOI DUNG)
+
+    public Permission(){
+        super();
+    }
 }
