@@ -47,7 +47,7 @@ public class SecurityConfig {
                                 "/register", "/confirmation-registration",
                                 "/login", "/get-new-access-token","/refresh-token",
                                 "/api/logout","/clients","/swagger-ui/*",
-                                "/forgot-password", "/reset-password",
+                                "/forgot-password", "/reset-password","/users/absolute-search",
                                 "/custom-login","/users/search")//tra ve thong bao user login tren keycloak
                         .permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/*", "/v3/api-docs/*").permitAll()

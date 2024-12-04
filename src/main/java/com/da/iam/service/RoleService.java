@@ -84,6 +84,15 @@ public class RoleService {
 
     }
 
+    public BasedResponse<?> findById(String id){
+        Role role = roleRepo.findById(UUID.fromString(id)).orElseThrow(()-> new IllegalArgumentException("Role not found"));
+        return new BasedResponse().success("Role found",role);
+    }
+    public BasedResponse<?> findByName(String name){
+        //Role role = roleRepo.findById(UUID.fromString(id)).orElseThrow(()-> new IllegalArgumentException("Role not found"));
+        return new BasedResponse().success("Role found",null);
+    }
+
     private Set<Permission> getPermissions(Set<String> rqPermission) {
         Set<Permission> permissionsSet = new HashSet<>();
         rqPermission.stream()
@@ -100,11 +109,11 @@ public class RoleService {
     }
 
     private void fetchRolePermissions(Set<RolePermissions> rolePermissions, UUID roleId, Set<Permission> permissions) {
-        permissions.stream().map(rolePermission -> RolePermissions.builder()
+        permissions.stream().map(permission -> RolePermissions.builder()
                         .roleId(roleId)
-                        .permissionId(rolePermission.getPermissionId())
-                        .scope(rolePermission.getScope())
-                        .resourceCode(rolePermission.getResourceCode())
+                        .permissionId(permission.getPermissionId())
+                        .scope(permission.getScope().name())
+                        .resourceCode(permission.getResourceCode())
                         .build())
                 .forEach(rolePermissions::add);
     }

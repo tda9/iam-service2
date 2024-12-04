@@ -60,10 +60,16 @@ public class AuthenticationService extends BaseService implements BaseAuthentica
     public User register(RegisterRequest request) {
         String email = request.email();
         String password = request.password();
+        String firstName = request.firstName();
+        String lastName = request.lastName();
+        String username = request.username();
         checkEmailExisted(email);
         List<UUID> rolesId = getRoles(request.role());
         User newUser = User.builder()//khoi tao user
                 .email(email)
+                .username(username)
+                .firstName(firstName)
+                .lastName(lastName)
                 .password(passwordEncoder.encode(password))
                 .build();
         try {

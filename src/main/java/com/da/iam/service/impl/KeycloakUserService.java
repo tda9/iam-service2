@@ -16,6 +16,7 @@ import com.da.iam.service.impl.KeycloakAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,14 +31,16 @@ public class KeycloakUserService extends BaseService implements BaseUserService 
     private final UserRoleRepo userRoleRepo;
     private final PasswordService passwordService;
     private final KeycloakAuthenticationService keycloakAuthenticationService;
+    private final UserService userService;
 
-    public KeycloakUserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, EmailService emailService, UserRoleRepo userRoleRepo, PasswordService passwordService, KeycloakAuthenticationService keycloakAuthenticationService) {
+    public KeycloakUserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, EmailService emailService, UserRoleRepo userRoleRepo, PasswordService passwordService, KeycloakAuthenticationService keycloakAuthenticationService, UserService userService) {
         super(userRepo, roleRepo);
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.userRoleRepo = userRoleRepo;
         this.passwordService = passwordService;
         this.keycloakAuthenticationService = keycloakAuthenticationService;
+        this.userService = userService;
     }
 
     @Override
@@ -75,7 +78,13 @@ public class KeycloakUserService extends BaseService implements BaseUserService 
     }
 
     @Override
-    public BasedResponse<?> updateById(UpdateUserRequest request) {
-        return null;
+    @Transactional
+    public User updateById(UpdateUserRequest request) {
+
+        String oldEmail = userRepo.findById(UUID.fromString(request.userId())).orElseThrow().getEmail();
+        keycloakAuthenticationService.updateKeycloakUser(request,oldEmail);
+        return userService.updateById(request);
     }
+
+
 }

@@ -30,4 +30,14 @@ public class RoleManagementController {
     public BasedResponse<?> deleteById(@RequestBody @Valid DeleteRoleRequest request){
         return roleService.deleteById(request);
     }
+
+    @GetMapping("/{id}")
+    public BasedResponse<?> findById(@PathVariable @Valid String id){
+        return roleService.findById(id);
+    }
+
+    @GetMapping("/{name}")
+    public BasedResponse<?> findByName(@PathVariable @Valid String name){
+        return roleService.findByName(name);
+    }
 }

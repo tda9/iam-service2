@@ -4,6 +4,7 @@ import com.da.iam.dto.Credentials;
 import com.da.iam.dto.request.LoginRequest;
 import com.da.iam.dto.request.LogoutRequest;
 import com.da.iam.dto.request.RegisterRequest;
+import com.da.iam.dto.request.UpdateUserRequest;
 import com.da.iam.dto.response.BaseTokenResponse;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.dto.response.KeycloakTokenResponse;
@@ -21,6 +22,7 @@ import com.da.iam.service.BaseAuthenticationService;
 import com.da.iam.service.BaseService;
 import com.da.iam.service.EmailService;
 import com.da.iam.service.PasswordService;
+import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
@@ -45,6 +47,7 @@ import java.util.*;
 
 
 @Service
+@Slf4j
 public class KeycloakAuthenticationService extends BaseService implements BaseAuthenticationService {
     @Value("${application.security.keycloak.serverUrl}")
     private String serverUrl;
@@ -99,7 +102,7 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
     public User register(RegisterRequest request) {
         try {
             User user = authenticationService.register(request);
-            createKeycloakUser(user.getEmail(), user.getPassword());
+            createKeycloakUser(request.email(), request.password());
             return user;
         } catch (Exception e) {
             throw new IllegalArgumentException("Register with keycloak failed");
@@ -127,7 +130,6 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
 
     @Override
     public BaseTokenResponse login(LoginRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
         try {
             authenticationService.login(request);
             return getKeycloakUserToken(request.email(), request.password());
@@ -163,6 +165,24 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
             UserResource userResource = usersResource.get(userId);
             userResource.resetPassword(credential);
         } catch (Exception ex) {
+            throw new ErrorResponseException("Failed change keycloak password: " + ex.getMessage());
+        }
+    }
+    public void updateKeycloakUser(UpdateUserRequest request,String oldEmail) {
+        try {
+            UsersResource usersResource = keycloak.realm(realm).users();
+            // Use searchByEmail to find the user
+            List<UserRepresentation> users = usersResource.searchByEmail(oldEmail, true);
+            if (users.isEmpty()) {
+                throw new IllegalArgumentException("User with email " + oldEmail + " not found.");
+            }
+            UserRepresentation userRepresentation = users.get(0);
+            userRepresentation.setEnabled(!request.isLock());
+            userRepresentation.setEmail(request.email());
+            usersResource.get(userRepresentation.getId()).update(userRepresentation);
+            log.info("Update both keycloak and iam service successful");
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
             throw new ErrorResponseException("Failed change keycloak password: " + ex.getMessage());
         }
     }

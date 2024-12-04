@@ -10,10 +10,13 @@ import com.da.iam.exception.UserNotFoundException;
 import com.da.iam.repo.RoleRepo;
 import com.da.iam.repo.UserRepo;
 import com.da.iam.repo.UserRoleRepo;
+import com.da.iam.repo.impl.UserRepoCustom;
+import com.da.iam.repo.impl.UserRepoImpl;
 import com.da.iam.service.BaseService;
 import com.da.iam.service.BaseUserService;
 import com.da.iam.service.EmailService;
 import com.da.iam.service.PasswordService;
+import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,25 +41,28 @@ public class UserService extends BaseService implements BaseUserService {
     private final EmailService emailService;
     private final UserRoleRepo userRoleRepo;
     private final PasswordService passwordService;
+    private final UserRepoImpl userRepoImpl;
 
-    public UserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, EmailService emailService, UserRoleRepo userRoleRepo, PasswordService passwordService) {
+
+    public UserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, EmailService emailService, UserRoleRepo userRoleRepo, PasswordService passwordService, UserRepoImpl userRepoImpl) {
         super(userRepo, roleRepo);
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.userRoleRepo = userRoleRepo;
         this.passwordService = passwordService;
+        this.userRepoImpl = userRepoImpl;
     }
 
-    public Page<User> searchByKeyword(SearchUserRequest request, int currentPage, int currentSize, String sortBy, String sort) {
-        Pageable pageable = PageRequest.of(currentPage, currentSize, Sort.by(
-                Sort.Order.by(sortBy).with(Sort.Direction.fromString(sort))
-        ));
-        String keyword = "%"+request.keyword()+"%";
-        return userRepo.searchByKeyword(keyword, pageable);
-    }
+//    public Page<User> searchByKeyword(String request, int currentPage, int currentSize, String sortBy, String sort) {
+//        Pageable pageable = PageRequest.of(currentPage, currentSize, Sort.by(
+//                Sort.Order.by(sortBy).with(Sort.Direction.fromString(sort))
+//        ));
+//        String keyword = "%" + request + "%";
+//        return userRepo.searchByKeyword(keyword, pageable);
+//    }
 
     private boolean isValidColumnName(String columnName) {
-        // Implement a method to validate if the column name is safe (e.g., check against a whitelist of columns)
+        // Implement a method to validate if the column name is safe
         List<String> validColumns = Arrays.asList(
                 "email",
                 "firstName",
@@ -101,7 +107,7 @@ public class UserService extends BaseService implements BaseUserService {
 
     @Override
     @Transactional
-    public BasedResponse<?> updateById(UpdateUserRequest request) {
+    public User updateById(UpdateUserRequest request) {
         UUID id = UUID.fromString(request.userId());
         String email = request.email();
         String image = request.image();
@@ -123,10 +129,10 @@ public class UserService extends BaseService implements BaseUserService {
             user.setImage(image);
             user.setDeleted(delete);
             user.setVerified(isVerified);
-            userRepo.save(user);
+            User updatedUser = userRepo.save(user);
             isOperationSuccess(userRoleRepo.deleteByUserId(user.getUserId()), "Update failed");
             addRolesToUser(user.getUserId(), roles);
-            return new BasedResponse().success("Update successful", userRepo.findById(user.getUserId()));
+            return updatedUser;
         } catch (Exception ex) {
             throw new IllegalArgumentException("Update user failed");
         }
@@ -160,5 +166,22 @@ public class UserService extends BaseService implements BaseUserService {
             }
         }
         return false;
+    }
+
+    public List<User> searchByKeyword(String keyword, String sortBy,String sort,int currentSize,int currentPage) {
+        return userRepoImpl.searchByKeyword(keyword,sortBy,sort,currentSize, currentPage);
+    }
+    public User searchByField(String keyword) {
+        return userRepoImpl.searchByField(keyword).get(0);
+    }
+
+    public User findById(String id){
+        return userRepo.findById(UUID.fromString(id)).orElseThrow(()->new UserNotFoundException("User not found"));
+    }
+    public User findByEmail(String email){
+        return userRepo.findByEmail(email).orElseThrow(()->new UserNotFoundException("User not found"));
+    }
+    public Long getTotalSize(String keyword) {
+        return userRepoImpl.getTotalSize(keyword);
     }
 }

@@ -23,5 +23,7 @@ public interface UserRoleRepo extends JpaRepository<UserRoles, Integer> {
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO user_roles (user_id, role_id) VALUES (:userId, :roleId)", nativeQuery = true)
-    int insertUserRoles(@Param("userId") UUID userId, @Param("roleId") UUID roleId);;
+    int insertUserRoles(@Param("userId") UUID userId, @Param("roleId") UUID roleId);
+
+
 }

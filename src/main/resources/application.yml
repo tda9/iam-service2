@@ -11,8 +11,11 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        #enable statementinspector
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        session_factory:
+          statement_inspector: com.da.iam.repo.impl.CustomInspector
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
@@ -66,7 +69,7 @@ confirmation:
 application:
   file:
     upload-dir: D:\\da\\images
-  #KEYCLOAK
+  #KEYCLOAK DEFAULT
   authProvider: DEFAULT
   security:
     jwt:
@@ -75,7 +78,6 @@ application:
       refresh-token:
         expiration: 604800000 # 7days
     keycloak:
-      enabled: true
       serverUrl: http://localhost:8082
       realm: master
       clientId: iam-service-client-master

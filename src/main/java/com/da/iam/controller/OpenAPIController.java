@@ -26,16 +26,17 @@ public class OpenAPIController {
     public List<String> getClients() {
         return Arrays.asList("First Client", "Second Client");
     }
+
     @PostMapping
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Results are ok", content = { @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = User.class)) }),
+            @ApiResponse(responseCode = "200", description = "Results are ok", content = {@Content(mediaType = "application/json",
+                    schema = @Schema(implementation = User.class))}),
             @ApiResponse(responseCode = "400", description = "Invalid request",
                     content = @Content),
             @ApiResponse(responseCode = "404", description = "resource not found",
-                    content = @Content) })
+                    content = @Content)})
     @Operation(summary = "Springdoc open api sample API")
-    public ResponseEntity postApiCall(@RequestBody RequestEntity request){
+    public ResponseEntity postApiCall(@RequestBody RequestEntity request) {
         System.out.println("Checking swagger doc ");
         return new ResponseEntity(HttpStatus.OK);
     }

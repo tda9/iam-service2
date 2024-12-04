@@ -5,6 +5,7 @@ import com.da.iam.dto.request.DeletePermissionRequest;
 import com.da.iam.dto.request.UpdatePermissionRequest;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.entity.Permission;
+import com.da.iam.entity.Scope;
 import com.da.iam.exception.SaveToDatabaseFailedException;
 import com.da.iam.repo.PermissionRepo;
 import com.da.iam.repo.RolePermissionRepo;
@@ -26,6 +27,9 @@ public class PermissionService {
     private final PermissionRepo permissionRepo;
     private final RolePermissionRepo rolePermissionRepo;
 
+    public Permission findById(String id){
+        return permissionRepo.findById(UUID.fromString(id)).orElseThrow(()->new IllegalArgumentException("Permission not found"));
+    }
     public BasedResponse<?> create(CreatePermissionRequest request) {
         log.info("-------------------------------" + SecurityContextHolder.getContext().getAuthentication().getName() + " create permission");
         String name = request.resourceName();
@@ -33,11 +37,12 @@ public class PermissionService {
             throw new IllegalArgumentException("Resource name existed");
         }
         try {
-            permissionRepo.save(Permission.builder()
+            Permission permission = Permission.builder()
                     .resourceCode(request.resourceCode())
                     .resourceName(request.resourceName())
                     .scope(request.scope())
-                    .build());
+                    .build();
+            permissionRepo.save(permission);
             return new BasedResponse().created("Create permission successful", permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow());
         } catch (Exception ex) {
             log.error(ex.getMessage());
@@ -62,7 +67,7 @@ public class PermissionService {
         try {
             Permission permission = permissionRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("HERE"));
             permission.setDeleted(deleted);
-            permission.setScope(scope);
+            permission.setScope(Scope.valueOf(scope));
             permission.setResourceName(resourceName);
             permission.setResourceCode(resourceCode);
             permissionRepo.save(permission);

@@ -32,7 +32,6 @@ public class LoggingAspect {
         log.info("Remote address: {}", request.getRemoteAddr());
         log.info("Method: {}", request.getMethod());
         log.info("URL: {}", request.getRequestURL());
-
         Object response;
         try {
             // Proceed with the method execution

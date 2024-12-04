@@ -23,6 +23,12 @@ public record RegisterRequest(
         LocalDate dob,
         @Pattern(regexp = InputUtils.PHONE_NUMBER_PATTERN, message = "Invalid phone number format")
         String phone,
+        @NotNull(message = "username cannot be null")
+        String username,
+        @NotNull(message = "firstName cannot be null")
+        String firstName,
+        @NotNull(message = "lastName cannot be null")
+        String lastName,
         @NotNull(message = "User's roles cannot be  null")
         Set<String> role) {
 }

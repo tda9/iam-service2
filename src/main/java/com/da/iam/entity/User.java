@@ -23,7 +23,9 @@ public class User extends BaseEntity {
     @Column(name = "user_id")
     private UUID userId = UUID.randomUUID();
     private String username;
+    @Column(name = "first_name")
     private String firstName;
+    @Column(name = "last_name")
     private String lastName;
     private String email;
     private String password;

@@ -30,4 +30,9 @@ public class PermissionManagementController {
     public BasedResponse<?> deleteById(@RequestBody DeletePermissionRequest request) {
         return permissionService.deleteById(request);
     }
+
+    @GetMapping("/{id}")
+    public BasedResponse<?> findById(@PathVariable String id) {
+        return new BasedResponse().success("Permission found",permissionService.findById(id));
+    }
 }
