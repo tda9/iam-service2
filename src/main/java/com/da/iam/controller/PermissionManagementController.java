@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PermissionManagementController {
     private final PermissionService permissionService;
+    @PreAuthorize("hasPermission('PERMISSIONS','CREATE')")
     @PostMapping("/create")
     public BasedResponse<?> create(@RequestBody @Valid CreatePermissionRequest permissionDTO) {
         return permissionService.create(permissionDTO);
@@ -29,5 +30,10 @@ public class PermissionManagementController {
     @DeleteMapping("/delete")
     public BasedResponse<?> deleteById(@RequestBody DeletePermissionRequest request) {
         return permissionService.deleteById(request);
+    }
+    @PreAuthorize("hasPermission('PERMISSIONS','READ')")
+    @GetMapping("/{id}")
+    public BasedResponse<?> findById(@PathVariable String id) {
+        return BasedResponse.success("Permission found",permissionService.findById(id));
     }
 }

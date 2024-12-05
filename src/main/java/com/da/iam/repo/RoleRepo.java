@@ -39,6 +39,8 @@ public interface RoleRepo extends JpaRepository<Role, UUID> {
     int softDeleteRoleById(@Param("roleId") UUID roleId);
     boolean existsByNameAndRoleIdNot(String name,UUID roleId);
     boolean existsByName(String name);
+    @Query("SELECT r.deleted FROM Role r WHERE r.roleId = :roleId")
+    Optional<Boolean> isRoleDeleted(UUID roleId);
 
 
 }

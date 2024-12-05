@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
-
 public class JWTService {
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;

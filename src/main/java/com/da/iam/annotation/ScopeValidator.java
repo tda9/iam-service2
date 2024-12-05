@@ -1,17 +1,20 @@
 package com.da.iam.annotation;
 
+import com.da.iam.entity.Scope;
 import com.da.iam.service.PermissionService;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
-public class ScopeValidator implements ConstraintValidator<ValidScope, String> {
-    private final PermissionService permissionService;
 
+public class ScopeValidator implements ConstraintValidator<ValidScope, Scope> {
     @Override
-    public boolean isValid(String value, ConstraintValidatorContext context) {
-        if(value == null || value.isEmpty()) return false;
-        return permissionService.getScopes().contains(value);
+    public boolean isValid(Scope value, ConstraintValidatorContext context) {
+        try {
+            Scope.valueOf(value.name().toUpperCase()); // Check if the value is valid
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

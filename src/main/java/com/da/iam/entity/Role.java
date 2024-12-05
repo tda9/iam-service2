@@ -18,10 +18,12 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Role extends BaseEntity {
     @Id
-    @Column(name = "role_id")
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "role_id")
     private UUID roleId;
+    @Column(name = "name", nullable = false)
     private String name;
     @Builder.Default
+    @Column(name = "deleted" ,nullable = false)
     private boolean deleted = false;
 }

@@ -26,13 +26,13 @@ public record UpdateUserRequest(
         LocalDate dob,
         @Pattern(regexp = InputUtils.PHONE_NUMBER_PATTERN, message = "Invalid phone number format")
         String phone,
-        @NotNull(message = "image can not be null")
-        String image,
+
         @NotNull(message = "isVerified can not be null")
         Boolean isVerified,
         @NotNull(message = "isLock can not be null")
         Boolean isLock,
         @NotNull(message = "role cannot be null")
         Set<String> role,
+        @NotNull(message = "deleted can not be null")
         Boolean deleted
 ) {}

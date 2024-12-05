@@ -26,7 +26,7 @@ public class JWTFilter extends OncePerRequestFilter {
     private String authProvider;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if(authProvider.equals("DEFAULT")){
+
             final String header = request.getHeader("Authorization");
             final String jwt;
             final String email;
@@ -61,7 +61,6 @@ public class JWTFilter extends OncePerRequestFilter {
                 }
                 filterChain.doFilter(request, response);
             }
-        }
-        filterChain.doFilter(request, response);
+
     }
 }

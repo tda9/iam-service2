@@ -50,7 +50,7 @@ public class EmailService {
     }
 
     public void sendConfirmationRegistrationEmail(String to, String token) {
-        sendEmailWithHtmlTemplate(to, "Confirm Registration IAM Service",registrationTemplateName,confirmationRegistrationUrl + "email=" + to + "&token=" + token);
+        sendEmailWithHtmlTemplate(to, "Confirm Registration IAM Service",registrationTemplateName,confirmationRegistrationUrl + "?email=" + to + "&token=" + token);
     }
     public void sendForgotPasswordEmail(String to, String token) {
         sendEmailWithHtmlTemplate(to, "Confirm Registration IAM Service",registrationTemplateName,confirmationRegistrationUrl + "email=" + to + "&token=" + token);

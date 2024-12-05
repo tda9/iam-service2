@@ -20,11 +20,12 @@ import java.nio.file.Paths;
 @RequiredArgsConstructor
 public class ImageController {
     private final ImageService imageService;
-    @PostMapping("/images")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/images/{id}")
+    public ResponseEntity<String> uploadImage(@PathVariable String id, @RequestParam("file") MultipartFile file) {
         try {
             // Save the file to the directory
-            String filePath = imageService.saveImage(file);
+
+            String filePath = imageService.saveImage(file,id);
             return ResponseEntity.ok("Image uploaded successfully: " + filePath);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image");

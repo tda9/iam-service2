@@ -7,5 +7,5 @@ import com.da.iam.entity.User;
 
 public interface BaseUserService {
     User create(CreateUserRequest request);
-    BasedResponse<?> updateById(UpdateUserRequest request);
+    User updateById(UpdateUserRequest request);
 }

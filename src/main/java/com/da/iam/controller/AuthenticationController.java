@@ -8,6 +8,7 @@ import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
 import com.da.iam.service.impl.KeycloakAuthenticationService;
 import com.da.iam.service.PasswordService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,51 +18,44 @@ import org.springframework.web.bind.annotation.*;
 public class AuthenticationController {
     private final PasswordService passwordService;
     private final AuthenticationServiceFactory authenticationServiceFactory;
-    private final KeycloakAuthenticationService keycloakAuthenticationService;
-//    @GetMapping("/confirmation-registration")
-//    public BasedResponse<?> confirmRegister(@RequestParam String email, @RequestParam String token){
-//        try {
-//            authenticationService.confirmEmail(email, token);
-//            return BasedResponse.builder()
-//                    .httpStatusCode(200)
-//                    .requestStatus(true)
-//                    .message("Confirm register successful")
-//                    .data(email)
-//                    .build();
-//        } catch (Exception e) {
-//            throw new ErrorResponseException(e.getMessage());
-//        }
-//    }
+
+    @GetMapping("/confirmation-registration")
+    public BasedResponse<?> confirmRegister(@RequestParam String email, @RequestParam String token){
+        try {
+            passwordService.confirmRegisterEmail(email, token);
+            return BasedResponse.success("Confirm successful",email);
+        } catch (Exception e) {
+            throw new ErrorResponseException(e.getMessage());
+        }
+    }
 
     @PostMapping("/register")
-    public BasedResponse<?> register(@RequestBody RegisterRequest request) {
-        return new BasedResponse()
-                .success("Register successful",
+    public BasedResponse<?> register(@RequestBody @Valid RegisterRequest request) {
+        return BasedResponse.success("Register successful",
                         authenticationServiceFactory.getService().register(request));
     }
 
     @PostMapping("/login")
-    public BasedResponse<?> login(@RequestBody LoginRequest request) {
-        return new BasedResponse().success("Login successful",
+    public BasedResponse<?> login(@RequestBody @Valid LoginRequest request) {
+        return BasedResponse.success("Login successful",
                 authenticationServiceFactory.getService().login(request));
     }
-
-    @GetMapping("/custom-login")
-    public BasedResponse<?> redirectToKeycloakLogin() {
-        return BasedResponse.builder()
-                .requestStatus(true)
-                .message("Please redirects to the Keycloak login page")
-                .data("http://localhost:8082")
-                .httpStatusCode(301)
-                .build();
+    @PostMapping("/api/logout")
+    public String logout(@RequestBody LogoutRequest request) {
+        authenticationServiceFactory.getService().logout(request);
+        return "Logout request has been sent.";
     }
 
-    //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PostMapping("/refresh-token")
+    public BasedResponse<?> refreshToken(@RequestParam String request) {
+        return BasedResponse.success("Refresh token successful",
+                authenticationServiceFactory.getService().refreshToken(request));
+    }
     @PostMapping("/change-password")
     public BasedResponse<?> changePassword(
             @RequestParam String currentPassword, @RequestParam String newPassword,
             @RequestParam String confirmPassword, @RequestParam String email) {
-        keycloakAuthenticationService.changePassword(currentPassword, newPassword, confirmPassword, email);
+        authenticationServiceFactory.getService().changePassword(currentPassword, newPassword, confirmPassword, email);
         return BasedResponse.builder()
                 .httpStatusCode(200)
                 .requestStatus(true)
@@ -73,13 +67,8 @@ public class AuthenticationController {
     @PostMapping("/forgot-password")
     public BasedResponse<?> forgotPassword(@RequestParam String email) {
         try {
-            keycloakAuthenticationService.forgotPassword(email);
-            return BasedResponse.builder()
-                    .data(email)
-                    .httpStatusCode(200)
-                    .requestStatus(true)
-                    .message("Sending Mail Reset Password Successful")
-                    .build();
+            passwordService.forgotPassword(email);
+            return BasedResponse.success("If your email existed, you will receive a link", email);
         } catch (Exception e) {
             throw new ErrorResponseException("Error forgot password");
         }
@@ -87,15 +76,9 @@ public class AuthenticationController {
 
     @GetMapping("/reset-password")
     public BasedResponse<?> resetPassword(@RequestParam String email, @RequestParam String newPassword, @RequestParam String token) {
-        keycloakAuthenticationService.resetPassword(email, newPassword, token);
-        return BasedResponse.builder()
-                .httpStatusCode(200)
-                .requestStatus(true)
-                .data(email)
-                .message("Reset password successful")
-                .build();
+        authenticationServiceFactory.getService().resetPassword(email, newPassword, token);
+        return BasedResponse.success("Reset password successful",email);
     }
-
 
     @PreAuthorize("hasPermission('HOMEPAGE','VIEW')")
     @GetMapping("/hello")
@@ -108,15 +91,13 @@ public class AuthenticationController {
     public String test1() {
         return "Hello DASHBOARD ";
     }
-
-    @PostMapping("/api/logout")
-    public String logout(@RequestBody LogoutRequest request) {
-        authenticationServiceFactory.getService().logout(request);
-        return "Logout request has been sent.";
-    }
-
-    @PostMapping("/refresh-token")
-    public BasedResponse<?> refreshToken(@RequestBody LogoutRequest request) {
-        return authenticationServiceFactory.getService().getNewAccessToken(request);
+    @GetMapping("/custom-login")
+    public BasedResponse<?> redirectToKeycloakLogin() {
+        return BasedResponse.builder()
+                .requestStatus(true)
+                .message("Please redirects to the Keycloak login page")
+                .data("http://localhost:8082")
+                .httpStatusCode(301)
+                .build();
     }
 }

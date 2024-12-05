@@ -12,7 +12,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Data
 @Builder
-@NoArgsConstructor
+
 public class BasedResponse<T> implements Serializable {
     private boolean requestStatus;
     private int httpStatusCode;
@@ -25,28 +25,34 @@ public class BasedResponse<T> implements Serializable {
     @JsonIgnore
     private Exception exception;
 
-    public BasedResponse<T> fail(String message, Exception ex){
-        this.setException(ex);
-        this.setHttpStatusCode(400);
-        this.setMessage(message);
-        this.setRequestStatus(false);
-        return this;
+    public BasedResponse(){
+        this.timestamp = Instant.now().toEpochMilli();
+    }
+    public static <T> BasedResponse<T> fail(String message, Exception ex){
+        BasedResponse<T> response = new BasedResponse<>();
+        response.setException(ex);
+        response.setHttpStatusCode(400);
+        response.setMessage(message);
+        response.setRequestStatus(false);
+        return response;
     }
 
-    public BasedResponse<T> success(String message, T data){
-        this.setHttpStatusCode(200);
-        this.setMessage(message);
-        this.setRequestStatus(true);
-        this.setData(data);
-        return this;
+    public static<T> BasedResponse<T> success(String message, T data){
+        BasedResponse<T> response = new BasedResponse<>();
+        response.setHttpStatusCode(200);
+        response.setMessage(message);
+        response.setRequestStatus(true);
+        response.setData(data);
+        return response;
     }
-    public BasedResponse<T> created(String message, T data){
-        this.setRequestStatus(true);
-        this.setHttpStatusCode(201);
-        this.setMessage(message);
-        this.setRequestStatus(true);
-        this.setData(data);
-        return this;
+    public static<T> BasedResponse<T> created(String message, T data){
+        BasedResponse<T> response = new BasedResponse<>();
+        response.setRequestStatus(true);
+        response.setHttpStatusCode(201);
+        response.setMessage(message);
+        response.setRequestStatus(true);
+        response.setData(data);
+        return response;
     }
     public BasedResponse<T> badRequest(String message){
         this.setRequestStatus(false);
