@@ -1,10 +1,12 @@
 package com.da.iam.dto.response;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
+@Builder
 public class DefaultTokenResponse implements BaseTokenResponse{
     private String accessToken;
     private String refreshToken;

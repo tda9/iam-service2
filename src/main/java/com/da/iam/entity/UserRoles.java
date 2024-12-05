@@ -26,8 +26,4 @@ public class UserRoles extends BaseEntity {
     @Column(name = "role_id")
     private UUID roleId;
 
-    public UserRoles(UUID userId, UUID roleId) {
-        this.userId = userId;
-        this.roleId = roleId;
-    }
 }

@@ -1,30 +1,18 @@
 package com.da.iam.service.impl;
 
-import com.da.iam.dto.Credentials;
 import com.da.iam.dto.request.LoginRequest;
 import com.da.iam.dto.request.LogoutRequest;
 import com.da.iam.dto.request.RegisterRequest;
-import com.da.iam.dto.request.UpdateUserRequest;
 import com.da.iam.dto.response.BaseTokenResponse;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.dto.response.KeycloakTokenResponse;
 
-import com.da.iam.entity.PasswordResetToken;
 import com.da.iam.entity.User;
 import com.da.iam.exception.ErrorResponseException;
-import com.da.iam.exception.TooManyRequestsException;
-import com.da.iam.exception.UserNotFoundException;
-import com.da.iam.repo.PasswordResetTokenRepo;
-import com.da.iam.repo.RoleRepo;
-import com.da.iam.repo.UserRepo;
-import com.da.iam.repo.UserRoleRepo;
-import com.da.iam.service.BaseAuthenticationService;
-import com.da.iam.service.BaseService;
-import com.da.iam.service.EmailService;
-import com.da.iam.service.PasswordService;
+import com.da.iam.repo.*;
+import com.da.iam.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -34,68 +22,43 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 
 @Service
 @Slf4j
-public class KeycloakAuthenticationService extends BaseService implements BaseAuthenticationService {
-    @Value("${application.security.keycloak.serverUrl}")
-    private String serverUrl;
+public class KeycloakAuthenticationService extends BaseKeycloakService implements BaseAuthenticationService {
+    private final PasswordService passwordService;
+
+    private final AuthenticationService authenticationService;
+
     @Value("${application.security.keycloak.realm}")
     private String realm;
     @Value("${application.security.keycloak.clientId}")
     private String clientId;
-    @Value("${application.security.keycloak.clientSecret}")
-    private String clientSecret;
-    @Value("${application.security.keycloak.grantType}")
-    private String grantType;
-    @Value("${application.security.keycloak.username}")
-    private String username;
-    @Value("${application.security.keycloak.password}")
-    private String password;
+    @Value("${application.security.keycloak.serverUrl}")
+    private String serverUrl;
     @Value("${application.security.keycloak.logoutUrl}")
     private String LOGOUT_URL;
     @Value("${application.security.keycloak.newAccessTokenUrl}")
     private String NEW_ACCESS_TOKEN_URL;
-    private final Keycloak keycloak;
-    private final PasswordService passwordService;
-    private final AuthenticationManager authenticationManager;
-    private final UserRepo userRepo;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationService authenticationService;
-    private final EmailService emailService;
-    private final PasswordResetTokenRepo passwordResetTokenRepo;
-
     public KeycloakAuthenticationService(UserRepo userRepo,
                                          RoleRepo roleRepo,
                                          Keycloak keycloak,
                                          PasswordService passwordService,
-                                         AuthenticationManager authenticationManager,
-                                         UserRepo userRepo1, UserService userService,
-                                         UserRoleRepo userRoleRepo,
-                                         PasswordEncoder passwordEncoder,
                                          AuthenticationService authenticationService,
-                                         EmailService emailService,
-                                         PasswordResetTokenRepo passwordResetTokenRepo) {
-        super(userRepo, roleRepo);
-        this.keycloak = keycloak;
+                                         BlackListTokenRepo blackListTokenRepo,
+                                         JWTService jwtService
+                                         ) {
+        super(keycloak,userRepo, roleRepo,blackListTokenRepo,jwtService);
         this.passwordService = passwordService;
-        this.authenticationManager = authenticationManager;
-        this.userRepo = userRepo1;
-        this.passwordEncoder = passwordEncoder;
         this.authenticationService = authenticationService;
-        this.emailService = emailService;
-        this.passwordResetTokenRepo = passwordResetTokenRepo;
     }
 
     @Override
@@ -109,24 +72,6 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
         }
     }
 
-    public void createKeycloakUser(String username, String password) {
-        try {
-            UsersResource userResource = keycloak().realm(realm).users();
-            CredentialRepresentation credential = Credentials.createPasswordCredentials(password);
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername(username);
-            user.setFirstName(null);
-            user.setLastName(null);
-            user.setEmail(username);
-            user.setCredentials(Collections.singletonList(credential));
-            user.setEnabled(true);
-            //user.isEmailVerified();
-            user.setClientRoles(Map.of());
-            userResource.create(user);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
 
     @Override
     public BaseTokenResponse login(LoginRequest request) {
@@ -137,20 +82,11 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
             throw new IllegalArgumentException("Login with keycloak failed");
         }
     }
-
+@Override
     public void changePassword(String currentPassword, String newPassword, String confirmPassword, String email) {
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found"));
-        if (!newPassword.equals(confirmPassword)) {
-            throw new IllegalArgumentException("Passwords do not match");
-        }
-        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect");
-        }
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepo.save(user);
-
+        passwordService.changePassword(currentPassword, newPassword, confirmPassword, email);
         try {
-            UsersResource usersResource = keycloak.realm(realm).users();
+            UsersResource usersResource = keycloak().realm(realm).users();
             // Use searchByEmail to find the user
             List<UserRepresentation> users = usersResource.searchByEmail(email, true);
             if (users.isEmpty()) {
@@ -168,46 +104,11 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
             throw new ErrorResponseException("Failed change keycloak password: " + ex.getMessage());
         }
     }
-    public void updateKeycloakUser(UpdateUserRequest request,String oldEmail) {
-        try {
-            UsersResource usersResource = keycloak.realm(realm).users();
-            // Use searchByEmail to find the user
-            List<UserRepresentation> users = usersResource.searchByEmail(oldEmail, true);
-            if (users.isEmpty()) {
-                throw new IllegalArgumentException("User with email " + oldEmail + " not found.");
-            }
-            UserRepresentation userRepresentation = users.get(0);
-            userRepresentation.setEnabled(!request.isLock());
-            userRepresentation.setEmail(request.email());
-            usersResource.get(userRepresentation.getId()).update(userRepresentation);
-            log.info("Update both keycloak and iam service successful");
-        } catch (Exception ex) {
-            log.error(ex.getMessage());
-            throw new ErrorResponseException("Failed change keycloak password: " + ex.getMessage());
-        }
-    }
 
-
-    public Keycloak keycloak() {
-        return KeycloakBuilder.builder()
-                .serverUrl(serverUrl)
-                .realm(realm)
-                .clientId(clientId)
-                .grantType(grantType)
-                .authorization("Bearer " + getAccessTokenMaster())
-                .username(username)
-                .clientSecret(clientSecret)
-                .password(password)
-                .build();
-    }
-
-    public String getAccessTokenMaster() {
-        return keycloak.tokenManager().getAccessTokenString();
-    }
 
     @Override
-    public BasedResponse<?> logout(LogoutRequest logoutDto) {
-        String refreshToken = logoutDto.refreshToken();
+    public void logout(LogoutRequest request) {
+        String refreshToken = request.refreshToken();
         RestTemplate restTemplate = new RestTemplate();
 
         // Set headers
@@ -219,15 +120,13 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
         body.add("client_id", clientId);
         //body.add("client_secret", clientSecret);
         body.add("refresh_token", refreshToken);
-
         // Create the request
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-
+        HttpEntity<MultiValueMap<String, String>> requestKeycloak = new HttpEntity<>(body, headers);
         // Send the request
         ResponseEntity<String> response = restTemplate.exchange(
                 LOGOUT_URL,
                 HttpMethod.POST,
-                request,
+                requestKeycloak,
                 String.class
         );
 
@@ -237,20 +136,13 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
         } else {
             System.out.println("Logout failed: " + response.getStatusCode());
         }
-        return BasedResponse.builder()
-                .requestStatus(false)
-                .httpStatusCode(400)
-                .message("Logout successful")
-                .build();
+        BasedResponse.success("Logout successful", request.email());
     }
 
 
-
     @Override
-    public BasedResponse<?> getNewAccessToken(LogoutRequest logoutDto) {
-        String refreshToken = logoutDto.refreshToken();
+    public BaseTokenResponse refreshToken(String  refreshToken) {
         RestTemplate restTemplate = new RestTemplate();
-
         // Set headers
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
@@ -266,18 +158,13 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
 
         // Send the request
         ResponseEntity<KeycloakTokenResponse> response = restTemplate.exchange(NEW_ACCESS_TOKEN_URL, HttpMethod.POST, request, KeycloakTokenResponse.class);
-
         // Check response status
         if (response.getStatusCode().is2xxSuccessful()) {
             System.out.println("Logout successful!");
         } else {
             System.out.println("Logout failed: " + response.getStatusCode());
         }
-        return BasedResponse.builder()
-                .requestStatus(true)
-                .httpStatusCode(200)
-                .data(response.getBody())
-                .build();
+        return response.getBody();
     }
 
     public KeycloakTokenResponse getKeycloakUserToken(String username, String password) {
@@ -302,34 +189,11 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
         return response.getBody();
     }
 
-
-    public void forgotPassword(String to) {
-        User user = userRepo.findByEmail(to).orElseThrow();
-        Optional<PasswordResetToken> lastToken = passwordResetTokenRepo.findTopByUserIdOrderByCreatedDateDesc(user.getUserId());
-        if (lastToken.isPresent() && lastToken.get().getExpirationDate().isAfter(LocalDateTime.now())) {
-            throw new TooManyRequestsException("You can only request a password reset every 5 minutes.");
-        } else if (lastToken.isPresent() && lastToken.get().getExpirationDate().isBefore(LocalDateTime.now())) {
-            passwordResetTokenRepo.delete(lastToken.get());
-        }
-        String token = passwordService.generateToken();
-        //emailService.sendEmail(to, "Confirm password reset", "Your token is:"+ token);
-        emailService.sendResetPassword(to, "Confirm password reset", "ResetPasswordTemplate.html", token);
-        passwordResetTokenRepo.save(new PasswordResetToken(token, LocalDateTime.now().plusMinutes(5), user.getUserId()));
-    }
-
+    @Override
     public void resetPassword(String email, String newPassword, String token) {
-        User user = userRepo.findByEmail(email).orElseThrow();
-        PasswordResetToken requestToken = passwordResetTokenRepo.findPasswordResetTokenByToken(token);
-        if (requestToken.getExpirationDate().isBefore(LocalDateTime.now()) || !Objects.equals(user.getUserId(), requestToken.getUserId())) {
-            throw new IllegalArgumentException("Invalid or expired token");
-        }
-        user.setPassword(passwordEncoder.encode(newPassword));
-
-
-        userRepo.save(user);
-        passwordResetTokenRepo.delete(requestToken);
+        passwordService.resetPassword(email, newPassword, token);
         try {
-            UsersResource usersResource = keycloak.realm(realm).users();
+            UsersResource usersResource = keycloak().realm(realm).users();
             // Use searchByEmail to find the user
             List<UserRepresentation> users = usersResource.searchByEmail(email, true);
             if (users.isEmpty()) {
@@ -346,6 +210,6 @@ public class KeycloakAuthenticationService extends BaseService implements BaseAu
         } catch (Exception ex) {
             throw new ErrorResponseException("Failed reset keycloak password: " + ex.getMessage());
         }
-
     }
+
 }

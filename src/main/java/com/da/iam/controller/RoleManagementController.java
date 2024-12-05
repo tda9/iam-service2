@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class RoleManagementController {
 
     private final RoleService roleService;
+    @PreAuthorize("hasPermission('ROLES','CREATE')")
     @PostMapping("/create")
     public BasedResponse<?> create(@RequestBody @Valid CreateRoleRequest createRoleRequest) {
         return roleService.create(createRoleRequest);
@@ -30,7 +31,7 @@ public class RoleManagementController {
     public BasedResponse<?> deleteById(@RequestBody @Valid DeleteRoleRequest request){
         return roleService.deleteById(request);
     }
-
+    @PreAuthorize("hasPermission('ROLES','READ')")
     @GetMapping("/{id}")
     public BasedResponse<?> findById(@PathVariable @Valid String id){
         return roleService.findById(id);

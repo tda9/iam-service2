@@ -64,8 +64,6 @@ public class KeycloakTokenFilter extends OncePerRequestFilter {
             }else{
                 filterChain.doFilter(request, response);
             }
-
-
     }
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");

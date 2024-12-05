@@ -40,7 +40,7 @@ public class RoleService {
             Set<RolePermissions> rolePermissions = new HashSet<>();
             fetchRolePermissions(rolePermissions, roleId, permissions);
             rolePermissionRepo.saveAll(rolePermissions);
-            return new BasedResponse().created("Create role successful",rolePermissions);
+            return BasedResponse.created("Create role successful",rolePermissions);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Create role failed");
         }
@@ -63,7 +63,7 @@ public class RoleService {
             fetchRolePermissions(rolePermissions, id, permissions);
             rolePermissionRepo.deleteByRoleId(id);
             rolePermissionRepo.saveAll(rolePermissions);
-            return new BasedResponse().success("Update successful", rolePermissions);
+            return BasedResponse.success("Update successful", rolePermissions);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Update role failed");
         }
@@ -77,7 +77,7 @@ public class RoleService {
         }
         try {
             isOperationSuccess(roleRepo.softDeleteRoleById(id), "Delete role failed");
-            return new BasedResponse().success("Deleted successful", roleRepo.findById(id).orElseThrow());
+            return BasedResponse.success("Deleted successful", roleRepo.findById(id).orElseThrow());
         } catch (Exception ex) {
             throw new IllegalArgumentException("Delete role failed");
         }
@@ -86,11 +86,11 @@ public class RoleService {
 
     public BasedResponse<?> findById(String id){
         Role role = roleRepo.findById(UUID.fromString(id)).orElseThrow(()-> new IllegalArgumentException("Role not found"));
-        return new BasedResponse().success("Role found",role);
+        return BasedResponse.success("Role found",role);
     }
     public BasedResponse<?> findByName(String name){
         //Role role = roleRepo.findById(UUID.fromString(id)).orElseThrow(()-> new IllegalArgumentException("Role not found"));
-        return new BasedResponse().success("Role found",null);
+        return BasedResponse.success("Role found",null);
     }
 
     private Set<Permission> getPermissions(Set<String> rqPermission) {
@@ -112,7 +112,7 @@ public class RoleService {
         permissions.stream().map(permission -> RolePermissions.builder()
                         .roleId(roleId)
                         .permissionId(permission.getPermissionId())
-                        .scope(permission.getScope().name())
+                        .scope(permission.getScope())
                         .resourceCode(permission.getResourceCode())
                         .build())
                 .forEach(rolePermissions::add);

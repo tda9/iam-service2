@@ -42,8 +42,6 @@ public class AuditorAwareImpl implements AuditorAware<String> {
             log.info("Authenticated user extracted from UserDetails: {}", username);
             return Optional.ofNullable(username);
         }
-
-//TODO: handle exception here
         return Optional.of(authentication.getName());
     }
 }

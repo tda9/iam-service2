@@ -43,18 +43,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)//chu y cai nay, ko co se auto bi status 403
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
-                                "/", "/permissions/create","/roles/create","users/create",
+//                                "/permissions/create","/roles/create","users/create",
+                                "/","/images/*","/images",
                                 "/register", "/confirmation-registration",
-                                "/login", "/get-new-access-token","/refresh-token",
-                                "/api/logout","/clients","/swagger-ui/*",
-                                "/forgot-password", "/reset-password","/users/absolute-search",
-                                "/custom-login","/users/search")//tra ve thong bao user login tren keycloak
+                                "/login", "/refresh-token",
+                                "/api/logout","/reset-password",
+                                "/forgot-password", "/users/absolute-search",
+                                "/custom-login")
                         .permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/*", "/v3/api-docs/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 //.httpBasic(Customizer.withDefaults())
-
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -64,7 +64,6 @@ public class SecurityConfig {
                     .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtConverter)))
                     .addFilterBefore(keycloakTokenFilter, JWTFilter.class);
         }
-
         ;
         return http.build();
     }

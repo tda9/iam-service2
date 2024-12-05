@@ -14,8 +14,8 @@ spring:
         #enable statementinspector
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        session_factory:
-          statement_inspector: com.da.iam.repo.impl.CustomInspector
+#        session_factory:
+#          statement_inspector: com.da.iam.repo.custom.CustomInspector
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres

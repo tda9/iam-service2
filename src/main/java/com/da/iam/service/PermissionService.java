@@ -43,7 +43,7 @@ public class PermissionService {
                     .scope(request.scope())
                     .build();
             permissionRepo.save(permission);
-            return new BasedResponse().created("Create permission successful", permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow());
+            return BasedResponse.created("Create permission successful", permissionRepo.findByResourceNameIgnoreCase(name).orElseThrow());
         } catch (Exception ex) {
             log.error(ex.getMessage());
             log.info("-------------------------------" + SecurityContextHolder.getContext().getAuthentication().getName() + "failed create permission");
@@ -73,7 +73,7 @@ public class PermissionService {
             permissionRepo.save(permission);
             // this will not work with auditorAware isOperationSuccess(permissionRepo.updatePermissionById(id, resourceCode, scope, resourceName, deleted), "Update permission failed");//update va kiem tra permission
             rolePermissionRepo.updateResourceCodeAndScopeByPermissionId(resourceCode, scope, id);//update lai role_permission
-            return new BasedResponse().success("Update successful", permissionRepo.findByResourceNameIgnoreCase(resourceName).orElseThrow());
+            return BasedResponse.success("Update successful", permissionRepo.findByResourceNameIgnoreCase(resourceName).orElseThrow());
         } catch (Exception ex) {
             throw new IllegalArgumentException("Update permission failed: " + ex
                     .getMessage());
@@ -106,7 +106,7 @@ public class PermissionService {
         }
         try {
             isOperationSuccess(permissionRepo.deletePermissionById(id), "Delete permission failed");
-            return new BasedResponse().success("Deleted successful", permissionRepo.findById(id).orElseThrow());
+            return BasedResponse.success("Deleted successful", permissionRepo.findById(id).orElseThrow());
         } catch (Exception ex) {
             throw new IllegalArgumentException("Delete permission failed");
         }

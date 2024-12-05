@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.Set;
 
 public record CreateUserRequest(
-        @NotEmpty
+        @NotEmpty(message = "Email cannot be empty")
         @Pattern(regexp = InputUtils.EMAIL_PATTERN, message = "Invalid email format")
         String email,
         @DateTimeFormat(pattern = InputUtils.DOB_PATTERN)
@@ -19,15 +19,17 @@ public record CreateUserRequest(
         LocalDate dob,
         @Pattern(regexp = InputUtils.PHONE_NUMBER_PATTERN, message = "Invalid phone number format")
         String phone,
-        @NotNull(message = "Image cannot be null")
-        String image,
         @NotNull(message = "username cannot be null")
+        @Pattern(regexp = "^[a-zA-Z0-9._-]{3,}$", message = "Username must contain letters or digits with minimum 3 character")
         String username,
         @NotNull(message = "firstName cannot be null")
+        @Pattern(regexp = "^[a-zA-Z0-9_-]{3,}$", message = "First name must contain letters or digits with minimum 3 character")
         String firstName,
         @NotNull(message = "lastName cannot be null")
+        @Pattern(regexp = "^[a-zA-Z0-9_-]{3,}$", message = "Last name must contain letters or digits with minimum 3 character")
         String lastName,
-        @NotNull(message = "User's roles cannot be null")
+        @NotNull(message = "Roles cannot be null")
         Set<String> role) {
-
+        //Default:
+        //deleted: false, isVerified: false, isLock: false
 }

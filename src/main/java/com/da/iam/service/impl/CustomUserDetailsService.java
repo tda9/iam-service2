@@ -39,8 +39,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         Set<Role> userRoles = roleRepo.findRolesByUserId(user.getUserId());
         List<RolePermissions> rolePermissions = rolePermissionRepo.findAllByRoleIdIn(userRoles.stream().map(Role::getRoleId).collect(Collectors.toSet()));
         log.info("---USER GRANT---" + mapRolesToAuthorities(userRoles, rolePermissions).toString());
-        return new CustomUserDetails(user.getEmail(), user.getPassword(),
-                mapRolesToAuthorities(userRoles, rolePermissions), user.isLock());
+        return new CustomUserDetails(user.getEmail(),
+                user.getPassword(),
+                mapRolesToAuthorities(userRoles, rolePermissions),
+                user.isLock(),
+                user.isDeleted(),
+                user.isVerified()
+        );
     }
 
     public Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles, List<RolePermissions> permissions) {

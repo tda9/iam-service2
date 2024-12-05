@@ -10,8 +10,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "blacklist_token")
+@Table(name = "black_list_token")
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class BlackListToken extends BaseEntity {
 
@@ -19,16 +20,12 @@ public class BlackListToken extends BaseEntity {
     @Column(name = "token_id")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID tokenId;
-    @Column(length = 65535)
+    @Column(name = "user_id")
+    private UUID userId;
+    @Column(length = 10000)
     private String token;
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
-    @Column(name = "user_id")
-    private UUID userId;
-
-    public BlackListToken(){
-        super();
-    }
 
 
     public BlackListToken(String token,LocalDateTime expirationDate,UUID userId){

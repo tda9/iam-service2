@@ -1,9 +1,6 @@
-package com.da.iam.repo.impl;
+package com.da.iam.repo.custom;
 
 import com.da.iam.entity.User;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
