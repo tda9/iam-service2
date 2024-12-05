@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .email-header {
+            background: #0056b3;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .email-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .email-content {
+            padding: 20px;
+            text-align: left;
+        }
+
+        .email-content p {
+            margin: 0 0 16px;
+        }
+
+        .email-footer {
+            background: #f4f4f9;
+            color: #666;
+            text-align: center;
+            font-size: 12px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <!-- Header -->
+    <div class="email-header">
+        <h1>Register IAM Service</h1>
+    </div>
+
+    <!-- Content -->
+    <div class="email-content">
+        <p style="margin: 10px">You're nearly there...<br>Please confirm your email address by clicking on the button below.</p>
+        <a href="#" th:href="${link}" style="margin: 10px;display: inline-block; background: #0056b3; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-size: 16px; font-weight: bold; text-align: center;">
+            Click Here
+        </a>
+        <p style="margin: 10px">Thank you,<br>The Support Team</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="email-footer">
+        <p>&copy; 2024 IAM SERVICE. All rights reserved.</p>
+    </div>
+</div>
+</body>
+</html>

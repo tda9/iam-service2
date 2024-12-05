@@ -1,0 +1,123 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  application:
+    name: iam-service2
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        #enable statementinspector
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+#        session_factory:
+#          statement_inspector: com.da.iam.repo.custom.CustomInspector
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: secret
+  #  sql:
+  #    init:
+  #      schema-locations: classpath:scheme.sql
+  #      mode: always
+  mail:
+    registrationTemplateName: RegisterConfirmationTemplate
+    passwordResetTemplateName: PasswordResetTemplate
+    host: smtp.gmail.com
+    port: 587
+    username: tducanh157@gmail.com
+    password: ospcxgltbkzykrgv
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.gmail.com
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${application.security.keycloak.serverUrl}/realms/${application.security.keycloak.realm}
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+          jws-algorithms: RS256
+        opaquetoken:
+          client-secret: ${application.security.keycloak.clientSecret}
+          client-id: ${application.security.keycloak.clientId}
+
+      client:
+        registration:
+          keycloak:
+            client-id: iam-service-client-master
+            client-secret: x4xQ2O9DsSiGUl1ryd7k8qtXsstWsgxi
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: ${application.security.keycloak.serverUrl}
+            provider: keycloak
+        provider:
+          keycloak:
+            issuer-uri: ${application.security.keycloak.serverUrl}/realms/${application.security.keycloak.realm}
+
+confirmation:
+  registration:
+    url: http://localhost:8080/confirmation-registration
+application:
+  file:
+    upload-dir: D:\\da\\images
+  #KEYCLOAK DEFAULT
+  authProvider: DEFAULT
+  security:
+    jwt:
+      #privateKey
+      expiration: 86400000 # 1day
+      refresh-token:
+        expiration: 604800000 # 7days
+    keycloak:
+      serverUrl: http://localhost:8082
+      realm: master
+      clientId: iam-service-client-master
+      clientSecret: turn-off-client-authentication
+      grantType: password
+      username: admin
+      password: admin
+      logoutUrl: ${application.security.keycloak.serverUrl}/realms/master/protocol/openid-connect/logout
+      newAccessTokenUrl: ${application.security.keycloak.serverUrl}/realms/master/protocol/openid-connect/token
+
+
+jwt:
+  auth:
+    converter:
+      principal-attribute: principal_username
+      resource-id: iam-service-client-master
+
+logging:
+  file:
+    path: D:\\da\\log
+  level:
+    org:
+      springdoc: debug
+      hibernate:
+        sql: debug
+        type:
+          descriptor:
+          sql: Trace
+      springframework:
+        security: DEBUG
+
+
+server:
+  port: 8080
+permission:
+  scopes: "READ|WRITE|DELETE|UPDATE"
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  show-actuator: true
+
