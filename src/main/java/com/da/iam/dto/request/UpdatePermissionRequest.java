@@ -1,5 +1,7 @@
 package com.da.iam.dto.request;
 
+import com.da.iam.annotation.ValidScope;
+import com.da.iam.entity.Scope;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,7 +13,8 @@ public record UpdatePermissionRequest(
         @NotNull(message = "Resource name can not be null")
         String resourceName,
         @NotNull(message = "Scope can not be null")
-        String scope,
+        @ValidScope
+        Scope scope,
         @NotNull(message = "Resource code can not be null")
         String resourceCode,
         @NotNull(message = "Deleted can not be null")

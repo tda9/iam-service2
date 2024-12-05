@@ -56,7 +56,7 @@ public class PermissionService {
     public BasedResponse<?> updateById(UpdatePermissionRequest request) {
         UUID id = UUID.fromString(request.permissionId());
         String resourceName = request.resourceName();
-        String scope = request.scope();
+        Scope scope = request.scope();
         String resourceCode = request.resourceCode();
         boolean deleted = request.deleted();
         if (!permissionRepo.existsByPermissionId(id)) {//kiem tra co ton tai ko
@@ -67,7 +67,7 @@ public class PermissionService {
         try {
             Permission permission = permissionRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("HERE"));
             permission.setDeleted(deleted);
-            permission.setScope(Scope.valueOf(scope));
+            permission.setScope(scope);
             permission.setResourceName(resourceName);
             permission.setResourceCode(resourceCode);
             permissionRepo.save(permission);

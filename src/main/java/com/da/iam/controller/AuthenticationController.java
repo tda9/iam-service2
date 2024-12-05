@@ -1,9 +1,7 @@
 package com.da.iam.controller;
 
 import com.da.iam.controller.factory.AuthenticationServiceFactory;
-import com.da.iam.dto.request.LoginRequest;
-import com.da.iam.dto.request.LogoutRequest;
-import com.da.iam.dto.request.RegisterRequest;
+import com.da.iam.dto.request.*;
 import com.da.iam.dto.response.BasedResponse;
 import com.da.iam.exception.ErrorResponseException;
 import com.da.iam.service.impl.KeycloakAuthenticationService;
@@ -47,20 +45,23 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh-token")
-    public BasedResponse<?> refreshToken(@RequestParam String request) {
+    public BasedResponse<?> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
         return BasedResponse.success("Refresh token successful",
-                authenticationServiceFactory.getService().refreshToken(request));
+                authenticationServiceFactory.getService().refreshToken(request.refreshToken()));
     }
     @PostMapping("/change-password")
     public BasedResponse<?> changePassword(
-            @RequestParam String currentPassword, @RequestParam String newPassword,
-            @RequestParam String confirmPassword, @RequestParam String email) {
-        authenticationServiceFactory.getService().changePassword(currentPassword, newPassword, confirmPassword, email);
+            @RequestBody ChangePasswordRequest request) {
+        authenticationServiceFactory.getService().changePassword(
+                request.currentPassword(),
+                request.newPassword(),
+                request.confirmPassword(),
+                request.email());
         return BasedResponse.builder()
                 .httpStatusCode(200)
                 .requestStatus(true)
                 .message("Change password successful")
-                .data(email)
+                .data(request.email())
                 .build();
     }
 

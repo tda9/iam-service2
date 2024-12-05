@@ -1,6 +1,7 @@
 package com.da.iam.repo;
 
 import com.da.iam.entity.Permission;
+import com.da.iam.entity.Scope;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,9 +16,9 @@ import java.util.UUID;
 public interface PermissionRepo extends JpaRepository<Permission, UUID> {
     Optional<Permission> findByResourceNameIgnoreCase(String resourceName);
 
-    boolean existsPermissionsByResourceCodeAndResourceNameAndScopeAndPermissionIdNot(String resourceCode, String resourceName, String scope, UUID permissionId);
+    boolean existsPermissionsByResourceCodeAndResourceNameAndScopeAndPermissionIdNot(String resourceCode, String resourceName, Scope scope, UUID permissionId);
 
-    boolean existsPermissionsByResourceCodeAndScopeAndResourceNameNot(String resourceCode, String resourceName, String scope);
+//    boolean existsPermissionsByResourceCodeAndScopeAndResourceNameNot(String resourceCode, String resourceName, String scope);
     @Transactional
     @Modifying
     @Query("UPDATE Permission p SET p.resourceCode = :resourceCode, p.scope = :scope, p.resourceName = :resourceName,p.deleted = :deleted WHERE p.permissionId = :permissionId")

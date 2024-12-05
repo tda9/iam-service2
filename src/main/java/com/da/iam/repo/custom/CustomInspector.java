@@ -10,7 +10,7 @@ public class CustomInspector implements StatementInspector {
         if (sql != null && (sql.contains("1=1") && !sql.contains("0=0"))) {
             sql
                     .replace("lower", "unaccent(lower")
-                    .replace(" like ", ") like unaccent(")
+                    .replace(" like ", ") ilike unaccent(")
                     .replace("and 2=2", ")");
         }
         log.info("SQL: --------", sql);

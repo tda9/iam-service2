@@ -38,7 +38,7 @@ public class UserManagementController {
 
     @PreAuthorize("hasPermission('USERS','CREATE')")
     @PostMapping("/create")
-    public BasedResponse<?> create(@RequestParam @Valid CreateUserRequest request) {
+    public BasedResponse<?> create(@RequestBody @Valid CreateUserRequest request) {
         return BasedResponse.created("Create successful", userServiceFactory.getUserService().create(request));
     }
 

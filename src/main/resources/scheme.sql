@@ -82,16 +82,43 @@ CREATE TABLE black_list_token
 );
 --Để lấy access token mới với refresh token thì trong request để lấy access token, các bạn chỉ cần truyền grant_type=refresh_token, giá trị của refresh token mà chúng ta có trong request lấy access token trước, client ID và client secret.
 -- -- Insert default roles
-SELECT role_id, name
-FROM public.roles;
-INSERT INTO roles (role_id, name) VALUES
-                                      ('550e8400-e29b-41d4-a716-446655440000', 'SYSTEM_MANAGER'),
-                                      ('550e8400-e29b-41d4-a716-446655440001', 'USER_MANAGER'),
-                                      ('550e8400-e29b-41d4-a716-446655440002', 'USER');
-INSERT INTO permissions (permission_id, name)
+-- Insert permissions with UUIDs
+INSERT INTO public.permissions (permission_id, deleted, resource_code, resource_name, scope)
 VALUES
-    (gen_random_uuid(), 'READ'),
-    (gen_random_uuid(), 'WRITE'),
-    (gen_random_uuid(), 'DELETE'),
-    (gen_random_uuid(), 'UPDATE');
+    (gen_random_uuid(), false, 'PERMISSIONS', 'TAT_CA_QUYEN_DOC_PERMISSION', 'READ'),
+    (gen_random_uuid(), false, 'PERMISSIONS', 'TAT_CA_QUYEN_SUA_PERMISSION', 'UPDATE'),
+    (gen_random_uuid(), false, 'PERMISSIONS', 'TAT_CA_QUYEN_XOA_PERMISSION', 'DELETE'),
+    (gen_random_uuid(), false, 'PERMISSIONS', 'TAT_CA_QUYEN_TAO_PERMISSION', 'CREATE'),
+
+    (gen_random_uuid(), false, 'ROLES', 'TAT_CA_QUYEN_DOC_ROLES', 'READ'),
+    (gen_random_uuid(), false, 'ROLES', 'TAT_CA_QUYEN_SUA_ROLES', 'UPDATE'),
+    (gen_random_uuid(), false, 'ROLES', 'TAT_CA_QUYEN_XOA_ROLES', 'DELETE'),
+    (gen_random_uuid(), false, 'ROLES', 'TAT_CA_QUYEN_TAO_ROLES', 'CREATE'),
+
+    (gen_random_uuid(), false, 'USERS', 'TAT_CA_QUYEN_DOC_USERS', 'READ'),
+    (gen_random_uuid(), false, 'USERS', 'TAT_CA_QUYEN_SUA_USERS', 'UPDATE'),
+    (gen_random_uuid(), false, 'USERS', 'TAT_CA_QUYEN_XOA_USERS', 'DELETE'),
+    (gen_random_uuid(), false, 'USERS', 'TAT_CA_QUYEN_TAO_USERS', 'CREATE');
+
+-- Insert the ADMIN role with a UUID
+INSERT INTO public.roles (role_id, deleted, name)
+VALUES (gen_random_uuid(), false, 'ADMIN');
+
+-- Use variables to reference UUIDs for role and permissions
+DO $$
+    DECLARE
+        admin_role_id UUID;
+        permission_record RECORD;
+    BEGIN
+        -- Retrieve the UUID of the ADMIN role
+        SELECT role_id INTO admin_role_id FROM public.roles WHERE name = 'ADMIN';
+
+        -- Loop through all permissions to assign them to the ADMIN role
+        FOR permission_record IN
+            SELECT permission_id, resource_code, scope FROM public.permissions
+            LOOP
+                INSERT INTO public.role_permissions (permission_id, role_id, resource_code, scope)
+                VALUES (permission_record.permission_id, admin_role_id, permission_record.resource_code, permission_record.scope);
+            END LOOP;
+    END $$;
 

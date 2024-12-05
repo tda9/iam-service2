@@ -15,7 +15,6 @@ public record CreateRoleRequest(
         @Pattern(regexp = "^[a-zA-Z0-9_-]{3,}$", message = "Role name must contain letters or digits with minimum 3 character")
         String name,
         @NotEmpty(message = "Resource name can not be empty")
-        @Pattern(regexp = "^[a-zA-Z0-9_-]{3,}$", message = "Resource name must contain letters or digits with minimum 3 character")
         Set<String> permissionsResourceName
 ){
 }
